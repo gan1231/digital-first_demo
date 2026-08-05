@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getOrCreateApplication } from "@/lib/application";
+import { getApplicationContext } from "@/lib/application";
 import { Card, Field, inputClass } from "@/components/ui";
 import { saveStep } from "../actions";
 import { StepForm } from "../step-form";
@@ -9,8 +10,11 @@ export const metadata: Metadata = { title: "Мэргэжлийн сонголт"
 
 export default async function MajorStepPage() {
   const user = await requireUser("/apply/major");
-  const context = await getOrCreateApplication(user.id);
-  const application = context?.application;
+  const context = await getApplicationContext(user.id);
+
+  if (!context) redirect("/apply/track");
+
+  const application = context.application;
 
   return (
     <Card
@@ -29,7 +33,7 @@ export default async function MajorStepPage() {
               id="university"
               name="university"
               required
-              defaultValue={application?.university ?? ""}
+              defaultValue={application.university ?? ""}
               className={inputClass}
               placeholder="Монгол Улсын Их Сургууль"
             />
@@ -45,7 +49,7 @@ export default async function MajorStepPage() {
               id="major"
               name="major"
               required
-              defaultValue={application?.major ?? ""}
+              defaultValue={application.major ?? ""}
               className={inputClass}
               placeholder="Багш, математикийн боловсрол"
             />
@@ -57,7 +61,7 @@ export default async function MajorStepPage() {
               name="studyYears"
               type="number"
               required
-              defaultValue={application?.studyYears ?? 4}
+              defaultValue={application.studyYears ?? 4}
               className={inputClass}
             />
           </Field>
@@ -72,7 +76,7 @@ export default async function MajorStepPage() {
               name="tuitionAmount"
               type="number"
               required
-              defaultValue={application?.tuitionAmount ?? ""}
+              defaultValue={application.tuitionAmount ?? ""}
               className={inputClass}
               placeholder="3500000"
             />

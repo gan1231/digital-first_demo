@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ApplicationStatus, Role } from "@prisma/client";
+import { ApplicationStatus, CallTrack, Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth";
-import { getActiveCall } from "@/lib/call";
+import { GENERATED_CODES } from "@/lib/application-shared";
+import { getActiveCalls, trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
 import { averageEvaluations } from "@/lib/scoring";
 import { SOUMS } from "@/lib/soum";
@@ -13,13 +14,11 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = {
   q?: string;
+  call?: string;
   status?: string;
   soum?: string;
   mine?: string;
 };
-
-/** Анкет, эссэ нь системд бөглөгддөг тул бүрдэлд файлаар тооцогдохгүй. */
-const GENERATED_CODES = ["APPLICATION_FORM", "ESSAY"];
 
 export default async function ReviewerListPage({
   searchParams,
@@ -28,20 +27,20 @@ export default async function ReviewerListPage({
 }) {
   const user = await requireRole(Role.REVIEWER, Role.ADMIN);
   const filters = await searchParams;
-  const call = await getActiveCall();
+  const calls = await getActiveCalls();
 
-  if (!call) {
+  if (calls.length === 0) {
     return <Alert tone="warning">Идэвхтэй тэтгэлгийн зарлал алга байна.</Alert>;
   }
 
-  const requiredCount = call.requirements.filter(
-    (requirement) =>
-      requirement.isRequired && !GENERATED_CODES.includes(requirement.code),
-  ).length;
+  const selectedCall = filters.call
+    ? calls.find((call) => call.id === filters.call)
+    : undefined;
+  const scopedCalls = selectedCall ? [selectedCall] : calls;
 
   const applications = await prisma.application.findMany({
     where: {
-      callId: call.id,
+      callId: { in: scopedCalls.map((call) => call.id) },
       status: { not: ApplicationStatus.DRAFT },
       ...(filters.status ? { status: filters.status as ApplicationStatus } : {}),
       ...(filters.soum ? { soum: filters.soum } : {}),
@@ -72,6 +71,7 @@ export default async function ReviewerListPage({
 
   const rows = applications
     .map((application) => {
+      const call = calls.find((item) => item.id === application.callId)!;
       const { average, reviewerCount } = averageEvaluations(
         application.evaluations,
         call.criteria,
@@ -82,19 +82,22 @@ export default async function ReviewerListPage({
       const uploaded = new Set(
         application.documents.map((document) => document.requirementCode),
       );
+      const required = call.requirements.filter(
+        (requirement) =>
+          requirement.isRequired && !GENERATED_CODES.includes(requirement.code),
+      );
 
       return {
         application,
+        call,
         average,
         reviewerCount,
         myTotal: mine?.total ?? null,
         mySubmitted: Boolean(mine?.submittedAt),
-        completeness: call.requirements.filter(
-          (requirement) =>
-            requirement.isRequired &&
-            !GENERATED_CODES.includes(requirement.code) &&
-            uploaded.has(requirement.code),
+        uploadedCount: required.filter((requirement) =>
+          uploaded.has(requirement.code),
         ).length,
+        requiredCount: required.length,
       };
     })
     .filter((row) => (filters.mine === "1" ? !row.mySubmitted : true))
@@ -102,13 +105,11 @@ export default async function ReviewerListPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-medium text-neutral-900">Өргөдлүүд</h1>
-          <p className="mt-0.5 text-sm text-neutral-600">
-            {call.name} · нийт {rows.length}
-          </p>
-        </div>
+      <div>
+        <h1 className="text-xl font-medium text-neutral-900">Өргөдлүүд</h1>
+        <p className="mt-0.5 text-sm text-neutral-600">
+          {selectedCall ? selectedCall.name : "Бүх төрөл"} · нийт {rows.length}
+        </p>
       </div>
 
       <form className="flex flex-wrap gap-2 rounded-xl border border-neutral-200 bg-white p-3">
@@ -119,9 +120,21 @@ export default async function ReviewerListPage({
           className={`${inputClass} w-56`}
         />
         <select
+          name="call"
+          defaultValue={filters.call ?? ""}
+          className={`${inputClass} w-56`}
+        >
+          <option value="">Бүх төрөл</option>
+          {calls.map((call) => (
+            <option key={call.id} value={call.id}>
+              {trackLabels[call.track]}
+            </option>
+          ))}
+        </select>
+        <select
           name="status"
           defaultValue={filters.status ?? ""}
-          className={`${inputClass} w-44`}
+          className={`${inputClass} w-40`}
         >
           <option value="">Бүх төлөв</option>
           {Object.entries(statusLabels)
@@ -135,7 +148,7 @@ export default async function ReviewerListPage({
         <select
           name="soum"
           defaultValue={filters.soum ?? ""}
-          className={`${inputClass} w-40`}
+          className={`${inputClass} w-36`}
         >
           <option value="">Бүх сум</option>
           {SOUMS.map((soum) => (
@@ -166,14 +179,14 @@ export default async function ReviewerListPage({
         <Alert tone="info">Шүүлтүүрт тохирох өргөдөл олдсонгүй.</Alert>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[980px] text-sm">
             <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-xs text-neutral-600">
               <tr>
                 <th className="px-3 py-2 font-medium">Өргөдөгч</th>
+                <th className="px-3 py-2 font-medium">Төрөл</th>
                 <th className="px-3 py-2 font-medium">Сум</th>
                 <th className="px-3 py-2 font-medium">Мэргэжил</th>
-                <th className="px-3 py-2 text-right font-medium">ЭЕШ</th>
-                <th className="px-3 py-2 text-right font-medium">Голч</th>
+                <th className="px-3 py-2 text-right font-medium">Оноо/GPA</th>
                 <th className="px-3 py-2 text-center font-medium">Бүрдэл</th>
                 <th className="px-3 py-2 text-right font-medium">Миний оноо</th>
                 <th className="px-3 py-2 text-right font-medium">Дундаж</th>
@@ -197,25 +210,27 @@ export default async function ReviewerListPage({
                       {row.application.registerNo}
                     </span>
                   </td>
+                  <td className="px-3 py-2 text-xs text-neutral-600">
+                    {trackLabels[row.call.track]}
+                  </td>
                   <td className="px-3 py-2">{row.application.soum ?? "—"}</td>
-                  <td className="max-w-[220px] truncate px-3 py-2">
+                  <td className="max-w-[200px] truncate px-3 py-2">
                     {row.application.major ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
-                    {row.application.examScore ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {row.application.gpa ?? "—"}
+                    {row.call.track === CallTrack.STUDENT
+                      ? (row.application.universityGpa?.toFixed(2) ?? "—")
+                      : (row.application.examScore ?? "—")}
                   </td>
                   <td className="px-3 py-2 text-center">
                     <span
                       className={
-                        row.completeness === requiredCount
+                        row.uploadedCount === row.requiredCount
                           ? "text-green-700"
                           : "text-red-700"
                       }
                     >
-                      {row.completeness}/{requiredCount}
+                      {row.uploadedCount}/{row.requiredCount}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">

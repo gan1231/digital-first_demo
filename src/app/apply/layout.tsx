@@ -4,12 +4,12 @@ import { requireUser } from "@/lib/auth";
 import {
   APPLY_STEPS,
   EDITABLE_STATUSES,
+  getApplicationContext,
   getCompleteness,
-  getOrCreateApplication,
 } from "@/lib/application";
+import { trackLabels } from "@/lib/call";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { Alert } from "@/components/ui";
 
 export default async function ApplyLayout({
   children,
@@ -17,7 +17,7 @@ export default async function ApplyLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser("/apply");
-  const context = await getOrCreateApplication(user.id);
+  const context = await getApplicationContext(user.id);
 
   if (context && !EDITABLE_STATUSES.includes(context.application.status)) {
     redirect("/dashboard");
@@ -35,15 +35,16 @@ export default async function ApplyLayout({
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
           {context ? (
             <>
+              <p className="mb-3 text-xs text-neutral-500">
+                Сонгосон төрөл:{" "}
+                <span className="text-neutral-800">
+                  {trackLabels[context.call.track]}
+                </span>
+              </p>
               <Stepper steps={steps} />
-              {children}
             </>
-          ) : (
-            <Alert tone="warning" title="Идэвхтэй тэтгэлгийн зарлал алга">
-              Одоогоор нээлттэй тэтгэлэг байхгүй тул өргөдөл гаргах боломжгүй
-              байна.
-            </Alert>
-          )}
+          ) : null}
+          {children}
         </div>
       </main>
 

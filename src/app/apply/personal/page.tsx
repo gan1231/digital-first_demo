@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getOrCreateApplication } from "@/lib/application";
+import { getApplicationContext } from "@/lib/application";
 import { SOUMS } from "@/lib/soum";
 import { Card, Field, inputClass } from "@/components/ui";
 import { saveStep } from "../actions";
@@ -14,8 +15,11 @@ function isoDate(value: Date | null): string {
 
 export default async function PersonalStepPage() {
   const user = await requireUser("/apply/personal");
-  const context = await getOrCreateApplication(user.id);
-  const application = context?.application;
+  const context = await getApplicationContext(user.id);
+
+  if (!context) redirect("/apply/track");
+
+  const application = context.application;
 
   return (
     <Card
@@ -29,7 +33,7 @@ export default async function PersonalStepPage() {
               id="lastName"
               name="lastName"
               required
-              defaultValue={application?.lastName ?? ""}
+              defaultValue={application.lastName ?? ""}
               className={inputClass}
             />
           </Field>
@@ -39,7 +43,7 @@ export default async function PersonalStepPage() {
               id="firstName"
               name="firstName"
               required
-              defaultValue={application?.firstName ?? ""}
+              defaultValue={application.firstName ?? ""}
               className={inputClass}
             />
           </Field>
@@ -54,7 +58,7 @@ export default async function PersonalStepPage() {
               id="registerNo"
               name="registerNo"
               required
-              defaultValue={application?.registerNo ?? ""}
+              defaultValue={application.registerNo ?? ""}
               className={inputClass}
             />
           </Field>
@@ -65,7 +69,7 @@ export default async function PersonalStepPage() {
               name="birthDate"
               type="date"
               required
-              defaultValue={isoDate(application?.birthDate ?? null)}
+              defaultValue={isoDate(application.birthDate ?? null)}
               className={inputClass}
             />
           </Field>
@@ -75,7 +79,7 @@ export default async function PersonalStepPage() {
               id="gender"
               name="gender"
               required
-              defaultValue={application?.gender ?? ""}
+              defaultValue={application.gender ?? ""}
               className={inputClass}
             >
               <option value="" disabled>
@@ -92,7 +96,7 @@ export default async function PersonalStepPage() {
               name="phone"
               inputMode="numeric"
               required
-              defaultValue={application?.phone ?? user.phone ?? ""}
+              defaultValue={application.phone ?? user.phone ?? ""}
               className={inputClass}
             />
           </Field>
@@ -102,7 +106,7 @@ export default async function PersonalStepPage() {
               id="soum"
               name="soum"
               required
-              defaultValue={application?.soum ?? ""}
+              defaultValue={application.soum ?? ""}
               className={inputClass}
             >
               <option value="" disabled>
@@ -121,7 +125,7 @@ export default async function PersonalStepPage() {
               id="address"
               name="address"
               required
-              defaultValue={application?.address ?? ""}
+              defaultValue={application.address ?? ""}
               className={inputClass}
               placeholder="1-р баг, 5-р байр"
             />

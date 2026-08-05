@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import {
   getBlockingProblems,
   getCompleteness,
-  getOrCreateApplication,
+  getApplicationContext,
 } from "@/lib/application";
 import { formatCallDate, getCallTiming } from "@/lib/call";
 import { Alert, Card } from "@/components/ui";
@@ -14,9 +15,9 @@ export const metadata: Metadata = { title: "Илгээх" };
 
 export default async function ReviewStepPage() {
   const user = await requireUser("/apply/review");
-  const context = await getOrCreateApplication(user.id);
+  const context = await getApplicationContext(user.id);
 
-  if (!context) return null;
+  if (!context) redirect("/apply/track");
 
   const { call, application } = context;
   const steps = getCompleteness(application, call);

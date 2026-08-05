@@ -8,33 +8,67 @@ import {
   APPLY_STEPS,
   EDITABLE_STATUSES,
   countWords,
+  createApplication,
+  educationSchema,
+  essaySchema,
+  getApplicationContext,
   getBlockingProblems,
   getCompleteness,
-  getOrCreateApplication,
-  stepSchemas,
+  majorSchema,
+  personalSchema,
   type StepSlug,
 } from "@/lib/application";
-import { getCallTiming } from "@/lib/call";
+import { getActiveCalls, getCallTiming } from "@/lib/call";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
 export type FormState = { error?: string } | undefined;
+
+type EditableStep = Extract<
+  StepSlug,
+  "personal" | "education" | "major" | "essay"
+>;
 
 function nextStepSlug(current: StepSlug): string {
   const index = APPLY_STEPS.findIndex((step) => step.slug === current);
   return APPLY_STEPS[Math.min(index + 1, APPLY_STEPS.length - 1)].slug;
 }
 
+/** Тэтгэлгийн төрлөө сонгож өргөдлөө нээх. */
+export async function chooseTrack(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/apply");
+  const callId = String(formData.get("callId") ?? "");
+
+  const calls = await getActiveCalls();
+  const call = calls.find((item) => item.id === callId);
+
+  if (!call) {
+    return { error: "Тэтгэлгийн төрөл олдсонгүй." };
+  }
+
+  if (!getCallTiming(call).isOpen) {
+    return { error: "Энэ төрлийн хүлээн авах хугацаа дууссан байна." };
+  }
+
+  await createApplication(user.id, call.id);
+
+  revalidatePath("/apply", "layout");
+  redirect("/apply/personal");
+}
+
 export async function saveStep(
-  step: Exclude<StepSlug, "documents" | "review">,
+  step: EditableStep,
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireUser(`/apply/${step}`);
-  const context = await getOrCreateApplication(user.id);
+  const context = await getApplicationContext(user.id);
 
   if (!context) {
-    return { error: "Идэвхтэй тэтгэлгийн зарлал алга байна." };
+    return { error: "Эхлээд тэтгэлгийн төрлөө сонгоно уу." };
   }
 
   if (!EDITABLE_STATUSES.includes(context.application.status)) {
@@ -44,10 +78,8 @@ export async function saveStep(
   const raw = Object.fromEntries(formData);
 
   if (step === "essay") {
-    const parsed = stepSchemas.essay.safeParse(raw);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0].message };
-    }
+    const parsed = essaySchema.safeParse(raw);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     await prisma.application.update({
       where: { id: context.application.id },
@@ -57,10 +89,15 @@ export async function saveStep(
       },
     });
   } else {
-    const parsed = stepSchemas[step].safeParse(raw);
-    if (!parsed.success) {
-      return { error: parsed.error.issues[0].message };
-    }
+    const schema =
+      step === "personal"
+        ? personalSchema
+        : step === "major"
+          ? majorSchema
+          : educationSchema(context.call.track);
+
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     await prisma.application.update({
       where: { id: context.application.id },
@@ -85,9 +122,9 @@ export async function submitApplication(
     };
   }
 
-  const context = await getOrCreateApplication(user.id);
+  const context = await getApplicationContext(user.id);
   if (!context) {
-    return { error: "Идэвхтэй тэтгэлгийн зарлал алга байна." };
+    return { error: "Эхлээд тэтгэлгийн төрлөө сонгоно уу." };
   }
 
   const { call, application } = context;
@@ -96,8 +133,7 @@ export async function submitApplication(
     return { error: "Өргөдөл аль хэдийн илгээгдсэн байна." };
   }
 
-  const timing = getCallTiming(call);
-  if (!timing.isOpen) {
+  if (!getCallTiming(call).isOpen) {
     return { error: "Өргөдөл хүлээн авах хугацаа дууссан байна." };
   }
 
@@ -118,6 +154,7 @@ export async function submitApplication(
     action: "application.submit",
     targetType: "Application",
     targetId: application.id,
+    meta: { callId: call.id, track: call.track },
   });
 
   await sendEmail({

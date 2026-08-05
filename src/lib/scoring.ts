@@ -37,16 +37,20 @@ export function suggestScore(
     ScoringCriterion,
     "autoSource" | "autoInputMax" | "maxScore"
   >,
-  application: Pick<Application, "examScore" | "gpa">,
+  application: Pick<Application, "examScore" | "gpa" | "universityGpa">,
 ): number | null {
   if (criterion.autoSource === AutoScoreSource.NONE || !criterion.autoInputMax) {
     return null;
   }
 
-  const value =
-    criterion.autoSource === AutoScoreSource.EXAM_SCORE
-      ? application.examScore
-      : application.gpa;
+  const valueBySource: Record<AutoScoreSource, number | null> = {
+    [AutoScoreSource.NONE]: null,
+    [AutoScoreSource.EXAM_SCORE]: application.examScore,
+    [AutoScoreSource.GPA]: application.gpa,
+    [AutoScoreSource.UNIVERSITY_GPA]: application.universityGpa,
+  };
+
+  const value = valueBySource[criterion.autoSource];
 
   if (value === null || value === undefined) return null;
 

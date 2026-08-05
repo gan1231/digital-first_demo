@@ -1,4 +1,5 @@
 import type {
+  CallTrack,
   DocumentRequirement,
   ScholarshipCall,
   ScoringCriterion,
@@ -10,21 +11,28 @@ export type ActiveCall = ScholarshipCall & {
   criteria: ScoringCriterion[];
 };
 
-/**
- * Идэвхтэй тэтгэлгийн урилга. Хэд хэдэн урилга идэвхтэй байвал хамгийн сүүлд
- * хаагдахыг нь авна. Байхгүй бол null — хуудас "нээлттэй тэтгэлэг байхгүй"
- * төлөвөө үзүүлнэ.
- */
-export async function getActiveCall(): Promise<ActiveCall | null> {
-  return prisma.scholarshipCall.findFirst({
+const include = {
+  requirements: { orderBy: { sortOrder: "asc" } },
+  criteria: { orderBy: { sortOrder: "asc" } },
+} as const;
+
+/** Идэвхтэй бүх төрлийн тэтгэлэг. Төрөл бүр өөрийн материал, шалгууртай. */
+export async function getActiveCalls(): Promise<ActiveCall[]> {
+  return prisma.scholarshipCall.findMany({
     where: { isActive: true },
-    orderBy: { closesAt: "desc" },
-    include: {
-      requirements: { orderBy: { sortOrder: "asc" } },
-      criteria: { orderBy: { sortOrder: "asc" } },
-    },
+    orderBy: [{ year: "desc" }, { track: "asc" }],
+    include,
   });
 }
+
+export async function getCallById(id: string): Promise<ActiveCall | null> {
+  return prisma.scholarshipCall.findUnique({ where: { id }, include });
+}
+
+export const trackLabels: Record<CallTrack, string> = {
+  GRADUATE: "12 дугаар анги төгсөгч",
+  STUDENT: "2, 3 дугаар курсийн оюутан",
+};
 
 export type CallTiming = {
   isOpen: boolean;

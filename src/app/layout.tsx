@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { org } from "@/lib/brand";
+import { fund, org } from "@/lib/brand";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: `${org.siteName} — ${org.name}`,
-    template: `%s — ${org.siteName}`,
+    default: `${fund.name} — ${org.name}`,
+    template: `%s — ${fund.name}`,
   },
   description:
-    "12 дугаар анги төгсөгчдөд олгох сургалтын төлбөрийн тэтгэлгийн онлайн бүртгэл.",
+    "Сургалтын төлбөрийн тэтгэлгийн онлайн бүртгэл: 12 дугаар анги төгсөгч болон 2, 3 дугаар курсийн оюутнуудад.",
 };
 
 export default function RootLayout({

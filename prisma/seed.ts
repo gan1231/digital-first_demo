@@ -1,20 +1,124 @@
-import { AutoScoreSource, PrismaClient, Role } from "@prisma/client";
+import {
+  AutoScoreSource,
+  CallTrack,
+  PrismaClient,
+  Role,
+} from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 const YEAR = 2026;
+const ACADEMIC_YEAR = "2026-2027 хичээлийн жил";
+const OPENS_AT = new Date("2026-05-31T16:00:00.000Z");
+const CLOSES_AT = new Date("2026-08-31T15:59:59.000Z");
 
-/**
- * Журмаар тогтоосон 100 онооны шалгуур үзүүлэлт.
- * autoSource-той мөрүүдийн оноог систем анкетын тоон утгаас санал болгоно —
- * комисс хүсвэл гараар засна.
- */
-const criteria = [
+type RequirementSeed = {
+  code: string;
+  label: string;
+  description: string | null;
+  isRequired: boolean;
+  allowMultiple: boolean;
+  sortOrder: number;
+};
+
+type CriterionSeed = {
+  code: string;
+  label: string;
+  description: string | null;
+  maxScore: number;
+  autoSource: AutoScoreSource;
+  autoInputMax: number | null;
+  sortOrder: number;
+};
+
+/** Хоёр төрөлд давхардаж орох материалууд. */
+const sharedRequirements = (): RequirementSeed[] => [
+  {
+    code: "APPLICATION_LETTER",
+    label: "Тэтгэлэг хүссэн өргөдөл",
+    description: "Гарын үсэг зурсан өргөдөл.",
+    isRequired: true,
+    allowMultiple: false,
+    sortOrder: 1,
+  },
+  {
+    code: "APPLICATION_FORM",
+    label: "Тэтгэлэгт хамрагдах анкет",
+    description: "Системд бөглөсөн анкетаас автоматаар үүснэ.",
+    isRequired: true,
+    allowMultiple: false,
+    sortOrder: 2,
+  },
+  {
+    code: "ESSAY",
+    label: "Эссэ — 500-1000 үг",
+    description:
+      "«Миний сонгосон мэргэжил, ирээдүйн зорилго» сэдвээр системд шууд бичнэ.",
+    isRequired: true,
+    allowMultiple: false,
+    sortOrder: 3,
+  },
+  {
+    code: "RESIDENCE_REF",
+    label: "Иргэний оршин суугаа газрын хаягийн бүртгэлийн лавлагаа",
+    description: "И-Монголиа системээс авсан байх.",
+    isRequired: true,
+    allowMultiple: false,
+    sortOrder: 4,
+  },
+];
+
+const achievementsRequirement = (
+  description: string,
+): RequirementSeed => ({
+  code: "ACHIEVEMENTS",
+  label: "Нийгмийн оролцоо, манлайллыг нотлох баримт",
+  description,
+  isRequired: false,
+  allowMultiple: true,
+  sortOrder: 8,
+});
+
+/** Нэг. 12 дугаар анги төгсөгчид. */
+const graduateRequirements: RequirementSeed[] = [
+  ...sharedRequirements(),
+  {
+    code: "ADMISSION_PROOF",
+    label: "Элсэлтийн батламж, суралцах эрх олгосон баримт",
+    description: "Магадлан итгэмжлэгдсэн их, дээд сургуулийн баримт бичиг.",
+    isRequired: true,
+    allowMultiple: false,
+    sortOrder: 5,
+  },
+  {
+    code: "MAJOR_PROOF",
+    label: "Сонгосон мэргэжлийг нотлох баримт",
+    description:
+      "Их, дээд сургуулийн мэргэжлийн тодорхойлолт эсхүл элсэлтийн батламж.",
+    isRequired: true,
+    allowMultiple: false,
+    sortOrder: 6,
+  },
+  {
+    code: "SCORE_PROOF",
+    label: "Элсэлтийн шалгалтын оноо, боловсролын дундажийг нотлох баримт",
+    description:
+      "ЭЕШ-ын дундаж оноог баталгаажуулсан баримт, бүрэн дунд боловсролын үнэлгээний дундажийг нотлох И-Монголиа лавлагаа.",
+    isRequired: true,
+    allowMultiple: true,
+    sortOrder: 7,
+  },
+  achievementsRequirement(
+    "Гэрчилгээ, өргөмжлөл, сертификат, тодорхойлолтын хуулбар — байгаа тохиолдолд.",
+  ),
+];
+
+const graduateCriteria: CriterionSeed[] = [
   {
     code: "MAJOR_FIT",
     label:
-      "Сонгосон мэргэжил эрэлттэй, тэргүүлэх чиглэлийн бөгөөд сумын хүний нөөцийн хэрэгцээнд нийцсэн байдал",
+      "Сонгосон мэргэжил эрэлттэй, тэргүүлэх чиглэлийн бөгөөд сумын хүний нөөцийн хэрэгцээ, шаардлагад нийцсэн байдал",
     description:
       "Тухайн сумын хүний нөөцийн хэрэгцээ, тэргүүлэх чиглэлтэй хэр нийцэж байгааг үнэлнэ.",
     maxScore: 25,
@@ -43,8 +147,7 @@ const criteria = [
   {
     code: "SOCIAL",
     label: "Нийгмийн оролцоо, манлайллын үзүүлэлт",
-    description:
-      "Хавсаргасан гэрчилгээ, өргөмжлөл, сертификат, тодорхойлолтод үндэслэнэ.",
+    description: "Хавсаргасан гэрчилгээ, өргөмжлөл, сертификатад үндэслэнэ.",
     maxScore: 10,
     autoSource: AutoScoreSource.NONE,
     autoInputMax: null,
@@ -53,8 +156,7 @@ const criteria = [
   {
     code: "ESSAY",
     label: "Эссэний үнэлгээ",
-    description:
-      "«Миний сонгосон мэргэжил, ирээдүйн зорилго» эссений агуулга, бүтэц, үнэмшил.",
+    description: "Агуулга, бүтэц, үнэмшил.",
     maxScore: 10,
     autoSource: AutoScoreSource.NONE,
     autoInputMax: null,
@@ -71,137 +173,196 @@ const criteria = [
   },
 ];
 
-/** Журмаар шаардагдах материалын жагсаалт. sortOrder нь харагдах дараалал. */
-const requirements = [
+/** Хоёр. Одоо суралцаж буй 2, 3 дугаар курсийн оюутнууд. */
+const studentRequirements: RequirementSeed[] = [
+  ...sharedRequirements(),
   {
-    code: "APPLICATION_LETTER",
-    label: "Тэтгэлэг хүссэн өргөдөл",
-    description: "Гараар бичсэн эсхүл хэвлэсэн, гарын үсэг зурсан өргөдөл.",
-    isRequired: true,
-    allowMultiple: false,
-    sortOrder: 1,
-  },
-  {
-    code: "APPLICATION_FORM",
-    label: "Тэтгэлэгт хамрагдах анкет",
-    description: "Системд бөглөсөн анкет автоматаар үүснэ.",
-    isRequired: true,
-    allowMultiple: false,
-    sortOrder: 2,
-  },
-  {
-    code: "ESSAY",
-    label: "Эссэ — 500-1000 үг",
-    description:
-      "«Миний сонгосон мэргэжил, ирээдүйн зорилго» сэдвээр системд шууд бичнэ.",
-    isRequired: true,
-    allowMultiple: false,
-    sortOrder: 3,
-  },
-  {
-    code: "ID_CARD",
-    label: "Иргэний үнэмлэхийн хуулбар",
-    description: "Урд, ард талын хуулбар.",
-    isRequired: true,
-    allowMultiple: true,
-    sortOrder: 4,
-  },
-  {
-    code: "ADMISSION_PROOF",
-    label: "Элсэлтийн батламж, суралцах эрх",
-    description:
-      "Магадлан итгэмжлэгдсэн их, дээд сургуулийн элсэлтийн батламж эсхүл суралцах эрх олгосон баримт.",
+    code: "ENROLLMENT_PROOF",
+    label: "Магадлан итгэмжлэгдсэн хөтөлбөрт суралцаж буйг нотлох тодорхойлолт",
+    description: "Их, дээд сургуулиас олгосон албан ёсны тодорхойлолт.",
     isRequired: true,
     allowMultiple: false,
     sortOrder: 5,
   },
   {
-    code: "MAJOR_PROOF",
-    label: "Мэргэжлийн тодорхойлолт",
-    description:
-      "Сонгосон мэргэжлийг нотлох их, дээд сургуулийн мэргэжлийн тодорхойлолт.",
+    code: "GPA_PROOF",
+    label: "Голч дүн (GPA) 3.0 ба түүнээс дээш болохыг нотлох дүнгийн тодорхойлолт",
+    description: "Албан ёсоор баталгаажсан байх.",
     isRequired: true,
     allowMultiple: false,
     sortOrder: 6,
   },
   {
-    code: "EXAM_SCORE",
-    label: "ЭЕШ-ын дундаж онооны баримт",
-    description: "Элсэлтийн ерөнхий шалгалтын оноог баталгаажуулсан баримт.",
-    isRequired: true,
-    allowMultiple: true,
-    sortOrder: 7,
-  },
-  {
-    code: "EMONGOLIA_GPA",
-    label: "И-Монголиа лавлагаа — дүнгийн дундаж",
-    description:
-      "Бүрэн дунд боловсролын үнэлгээний дундажийг нотлох И-Монголиа системээс авсан лавлагаа.",
+    code: "CONDUCT_PROOF",
+    label: "Ёс зүйн ноцтой зөрчил гаргаж байгаагүй тухай сургуулийн тодорхойлолт",
+    description: "Суралцах хугацаанд хамаарна.",
     isRequired: true,
     allowMultiple: false,
-    sortOrder: 8,
+    sortOrder: 7,
+  },
+  achievementsRequirement(
+    "Нийгмийн оролцоо, манлайлал, эрдэм шинжилгээ, спорт, урлаг, сайн дурын үйл ажиллагааны гэрчилгээ, өргөмжлөл, сертификатын хуулбар — байгаа тохиолдолд.",
+  ),
+];
+
+const studentCriteria: CriterionSeed[] = [
+  {
+    code: "MAJOR_FIT",
+    label:
+      "Сонгосон мэргэжил эрэлттэй, тэргүүлэх чиглэлийн, мөн сумын хүний нөөцийн хэрэгцээ шаардлагад нийцсэн байдал",
+    description:
+      "Тухайн сумын хүний нөөцийн хэрэгцээ, тэргүүлэх чиглэлтэй хэр нийцэж байгааг үнэлнэ.",
+    maxScore: 25,
+    autoSource: AutoScoreSource.NONE,
+    autoInputMax: null,
+    sortOrder: 1,
   },
   {
-    code: "ACHIEVEMENTS",
-    label: "Нийгмийн оролцоо, манлайллын гэрчилгээ, өргөмжлөл",
+    code: "UNIVERSITY_GPA",
+    label: "Голч дүн (GPA)",
+    description: "Их сургуулийн голч дүнг 4.0-ийн харьцаагаар шилжүүлж бодно.",
+    maxScore: 30,
+    autoSource: AutoScoreSource.UNIVERSITY_GPA,
+    autoInputMax: 4,
+    sortOrder: 2,
+  },
+  {
+    code: "SOCIAL",
+    label: "Нийгмийн оролцоо, манлайллын үзүүлэлт",
     description:
-      "Гэрчилгээ, өргөмжлөл, сертификат, тодорхойлолтын хуулбар — байгаа тохиолдолд.",
-    isRequired: false,
-    allowMultiple: true,
-    sortOrder: 9,
+      "Эрдэм шинжилгээ, спорт, урлаг, сайн дурын үйл ажиллагааны оролцоог оруулна.",
+    maxScore: 10,
+    autoSource: AutoScoreSource.NONE,
+    autoInputMax: null,
+    sortOrder: 3,
+  },
+  {
+    code: "CONDUCT",
+    label: "Суралцахуйн тодорхойлолт",
+    description: "Сургуулийн тодорхойлолт, ёс зүйн байдалд үндэслэнэ.",
+    maxScore: 10,
+    autoSource: AutoScoreSource.NONE,
+    autoInputMax: null,
+    sortOrder: 4,
+  },
+  {
+    code: "ESSAY",
+    label: "Эссэний үнэлгээ",
+    description: "Агуулга, бүтэц, үнэмшил.",
+    maxScore: 10,
+    autoSource: AutoScoreSource.NONE,
+    autoInputMax: null,
+    sortOrder: 5,
+  },
+  {
+    code: "INTERVIEW",
+    label: "Ярилцлагын үнэлгээ",
+    description: "Комиссын ярилцлагын дүн.",
+    maxScore: 15,
+    autoSource: AutoScoreSource.NONE,
+    autoInputMax: null,
+    sortOrder: 6,
+  },
+];
+
+const calls = [
+  {
+    name: "12 дугаар анги төгсөгчдийн сургалтын төлбөрийн тэтгэлэг",
+    track: CallTrack.GRADUATE,
+    description:
+      "Дорноговь аймгийн харьяат, их дээд сургуульд элсэн суралцах эрх авсан төгсөгчдөд зориулав.",
+    quota: 50,
+    minExamScore: 650,
+    minGpa: 80,
+    minUniversityGpa: null,
+    requirements: graduateRequirements,
+    criteria: graduateCriteria,
+  },
+  {
+    name: "2, 3 дугаар курсийн оюутны сургалтын төлбөрийн тэтгэлэг",
+    track: CallTrack.STUDENT,
+    description:
+      "Магадлан итгэмжлэгдсэн хөтөлбөрт суралцаж буй, голч дүн 3.0-аас дээш Дорноговь аймгийн харьяат оюутнуудад зориулав.",
+    quota: 30,
+    minExamScore: null,
+    minGpa: null,
+    minUniversityGpa: 3,
+    requirements: studentRequirements,
+    criteria: studentCriteria,
   },
 ];
 
 async function main() {
-  const call = await prisma.scholarshipCall.upsert({
-    where: {
-      year_name: {
-        year: YEAR,
-        name: "12 дугаар анги төгсөгчдийн сургалтын төлбөрийн тэтгэлэг",
-      },
-    },
-    update: {},
-    create: {
-      name: "12 дугаар анги төгсөгчдийн сургалтын төлбөрийн тэтгэлэг",
-      year: YEAR,
-      description:
-        "Дорноговь аймгийн харьяат, их дээд сургуульд элсэн суралцах эрх авсан төгсөгчдөд зориулав.",
-      opensAt: new Date(`${YEAR}-06-01T00:00:00+08:00`),
-      closesAt: new Date(`${YEAR}-08-31T23:59:59+08:00`),
-      quota: 50,
+  for (const definition of calls) {
+    const total = definition.criteria.reduce(
+      (sum, item) => sum + item.maxScore,
+      0,
+    );
+    if (total !== 100) {
+      throw new Error(
+        `«${definition.name}» шалгуурын нийт оноо 100 байх ёстой, одоо ${total}.`,
+      );
+    }
+
+    const data = {
+      track: definition.track,
+      academicYear: ACADEMIC_YEAR,
+      description: definition.description,
+      opensAt: OPENS_AT,
+      quota: definition.quota,
       isActive: true,
-      minExamScore: 650,
-      minGpa: 80,
+      minExamScore: definition.minExamScore,
+      minGpa: definition.minGpa,
+      minUniversityGpa: definition.minUniversityGpa,
       requiredAimag: "Дорноговь",
-    },
-  });
+    };
 
-  for (const requirement of requirements) {
-    await prisma.documentRequirement.upsert({
-      where: { callId_code: { callId: call.id, code: requirement.code } },
-      update: requirement,
-      create: { ...requirement, callId: call.id },
+    const call = await prisma.scholarshipCall.upsert({
+      where: { year_name: { year: YEAR, name: definition.name } },
+      // closesAt-г шинэчлэхгүй — ашиглалтад хугацааг гараар сунгасан байж болно.
+      update: data,
+      create: { ...data, name: definition.name, year: YEAR, closesAt: CLOSES_AT },
     });
-  }
 
-  for (const criterion of criteria) {
-    await prisma.scoringCriterion.upsert({
-      where: { callId_code: { callId: call.id, code: criterion.code } },
-      update: criterion,
-      create: { ...criterion, callId: call.id },
-    });
-  }
+    await syncRequirements(call.id, definition.requirements);
+    await syncCriteria(call.id, definition.criteria);
 
-  const totalScore = criteria.reduce((sum, item) => sum + item.maxScore, 0);
-  if (totalScore !== 100) {
-    throw new Error(`Шалгуурын нийт оноо 100 байх ёстой, одоо ${totalScore}.`);
+    console.log(
+      `  ${definition.name}: ${definition.requirements.length} материал, ${definition.criteria.length} шалгуур (${total} оноо)`,
+    );
   }
 
   await seedStaff();
+  console.log("Seed дууслаа.");
+}
 
-  console.log(
-    `Seed дууслаа: «${call.name}» (${call.year}), ${requirements.length} материал, ${criteria.length} шалгуур (нийт ${totalScore} оноо).`,
-  );
+/** Журам өөрчлөгдвөл хуучин мөрүүд үлдэхгүй байхаар бүрэн тааруулна. */
+async function syncRequirements(callId: string, items: RequirementSeed[]) {
+  for (const item of items) {
+    await prisma.documentRequirement.upsert({
+      where: { callId_code: { callId, code: item.code } },
+      update: item,
+      create: { ...item, callId },
+    });
+  }
+
+  await prisma.documentRequirement.deleteMany({
+    where: { callId, code: { notIn: items.map((item) => item.code) } },
+  });
+}
+
+async function syncCriteria(callId: string, items: CriterionSeed[]) {
+  for (const item of items) {
+    await prisma.scoringCriterion.upsert({
+      where: { callId_code: { callId, code: item.code } },
+      update: item,
+      create: { ...item, callId },
+    });
+  }
+
+  await prisma.scoringCriterion.deleteMany({
+    where: { callId, code: { notIn: items.map((item) => item.code) } },
+  });
 }
 
 /** Комисс, админы бүртгэл. Нууц үг зөвхөн шинээр үүсгэх үед тавигдана. */

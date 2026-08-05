@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getCompleteness, getOrCreateApplication } from "@/lib/application";
+import { getApplicationContext, getCompleteness } from "@/lib/application";
 
-/** Дуусаагүй эхний алхам руу чиглүүлнэ. */
+/** Төрөл сонгоогүй бол сонгуулна, эс бөгөөс дуусаагүй эхний алхам руу. */
 export default async function ApplyIndexPage() {
   const user = await requireUser("/apply");
-  const context = await getOrCreateApplication(user.id);
+  const context = await getApplicationContext(user.id);
 
   if (!context) {
-    redirect("/dashboard");
+    redirect("/apply/track");
   }
 
   const steps = getCompleteness(context.application, context.call);

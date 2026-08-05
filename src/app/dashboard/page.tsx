@@ -3,8 +3,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ApplicationStatus } from "@prisma/client";
 import { requireUser, isStaff } from "@/lib/auth";
-import { getApplication, getCompleteness } from "@/lib/application";
-import { formatCallDate, getCallTiming } from "@/lib/call";
+import {
+  getApplicationContext,
+  getCompleteness,
+  type ApplicationContext,
+} from "@/lib/application";
+import { formatCallDate, getActiveCalls, getCallTiming, trackLabels } from "@/lib/call";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Alert, Card, StatusBadge, statusLabels } from "@/components/ui";
@@ -25,7 +29,9 @@ export default async function DashboardPage({
   }
 
   const { submitted } = await searchParams;
-  const context = await getApplication(user.id);
+  const context = await getApplicationContext(user.id);
+  const calls = context ? [] : await getActiveCalls();
+  const anyOpen = calls.some((call) => getCallTiming(call).isOpen);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -60,19 +66,38 @@ export default async function DashboardPage({
             </Alert>
           ) : null}
 
-          {!context ? (
+          {context ? (
+            <ApplicationCard context={context} />
+          ) : calls.length === 0 ? (
             <Card>
               <p className="text-sm text-neutral-600">
                 Одоогоор нээлттэй тэтгэлгийн зарлал байхгүй байна.
               </p>
             </Card>
-          ) : context.application ? (
-            <ApplicationCard
-              call={context.call}
-              application={context.application}
-            />
           ) : (
-            <StartCard call={context.call} />
+            <Card>
+              <p className="text-sm font-medium text-neutral-900">
+                Та өргөдөл гаргаагүй байна
+              </p>
+              <p className="mt-1 text-sm text-neutral-600">
+                {calls.length} төрлийн тэтгэлэг нээлттэй байна. Төрлөө сонгож
+                анкетаа алхам алхмаар бөглөнө үү — түр хадгалаад дараа
+                үргэлжлүүлж болно.
+              </p>
+
+              {anyOpen ? (
+                <Link
+                  href="/apply/track"
+                  className="mt-4 inline-block rounded-lg bg-brand-orange px-4 py-2 text-sm text-white transition-colors hover:bg-brand-orange-dark"
+                >
+                  Тэтгэлгийн төрөл сонгох
+                </Link>
+              ) : (
+                <p className="mt-4 text-sm text-neutral-500">
+                  Өргөдөл хүлээн авах хугацаа дууссан байна.
+                </p>
+              )}
+            </Card>
           )}
         </div>
       </main>
@@ -82,48 +107,8 @@ export default async function DashboardPage({
   );
 }
 
-type Context = NonNullable<Awaited<ReturnType<typeof getApplication>>>;
-type ApplicationRow = NonNullable<Context["application"]>;
-
-function StartCard({ call }: { call: Context["call"] }) {
-  const timing = getCallTiming(call);
-
-  return (
-    <Card>
-      <p className="text-sm font-medium text-neutral-900">{call.name}</p>
-      <p className="mt-0.5 text-xs text-neutral-500">
-        Эцсийн хугацаа: {formatCallDate(call.closesAt)} ·{" "}
-        {timing.hasClosed ? "хугацаа дууссан" : `${timing.daysLeft} хоног үлдсэн`}
-      </p>
-
-      <p className="mt-3 text-sm text-neutral-600">
-        Та энэ тэтгэлэгт өргөдөл гаргаагүй байна. Анкетаа алхам алхмаар бөглөж,
-        түр хадгалаад дараа үргэлжлүүлж болно.
-      </p>
-
-      {timing.isOpen ? (
-        <Link
-          href="/apply"
-          className="mt-4 inline-block rounded-lg bg-brand-orange px-4 py-2 text-sm text-white transition-colors hover:bg-brand-orange-dark"
-        >
-          Анкет бөглөж эхлэх
-        </Link>
-      ) : (
-        <p className="mt-4 text-sm text-neutral-500">
-          Өргөдөл хүлээн авах хугацаа дууссан байна.
-        </p>
-      )}
-    </Card>
-  );
-}
-
-function ApplicationCard({
-  call,
-  application,
-}: {
-  call: Context["call"];
-  application: ApplicationRow;
-}) {
+function ApplicationCard({ context }: { context: ApplicationContext }) {
+  const { call, application } = context;
   const steps = getCompleteness(application, call);
   const done = steps.filter((step) => step.isComplete).length;
   const timing = getCallTiming(call);
@@ -135,7 +120,12 @@ function ApplicationCard({
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-neutral-900">{call.name}</p>
+          <span className="inline-flex rounded-full bg-brand-sand px-2.5 py-0.5 text-[11px] text-amber-900">
+            {trackLabels[call.track]}
+          </span>
+          <p className="mt-1.5 text-sm font-medium text-neutral-900">
+            {call.name}
+          </p>
           <p className="mt-0.5 text-xs text-neutral-500">
             Эцсийн хугацаа: {formatCallDate(call.closesAt)} ·{" "}
             {timing.hasClosed

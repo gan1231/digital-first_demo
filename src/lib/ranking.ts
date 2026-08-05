@@ -1,7 +1,7 @@
 import "server-only";
 import { ApplicationStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getActiveCall, type ActiveCall } from "@/lib/call";
+import { getActiveCalls, type ActiveCall } from "@/lib/call";
 import { averageEvaluations, scoreSpread } from "@/lib/scoring";
 
 export type RankedRow = {
@@ -12,8 +12,8 @@ export type RankedRow = {
   soum: string | null;
   university: string | null;
   major: string | null;
-  examScore: number | null;
-  gpa: number | null;
+  /** Төрлөөс хамаарсан гол үзүүлэлт: ЭЕШ эсхүл их сургуулийн GPA. */
+  keyMetric: number | null;
   average: number | null;
   perCriterion: Record<string, number>;
   reviewerCount: number;
@@ -22,31 +22,30 @@ export type RankedRow = {
   status: ApplicationStatus;
 };
 
-export type RankingResult = {
+export type CallRanking = {
   call: ActiveCall;
   rows: RankedRow[];
-  /** Үнэлгээ бүрэн ороогүй тул эрэмбэд орох боломжгүй өргөдлүүд. */
+  /** Баталгаажсан үнэлгээгүй тул эрэмбэд ороогүй өргөдлүүд. */
   unscored: number;
 };
 
 /**
- * Эцсийн эрэмбэ. Зөвхөн баталгаажсан үнэлгээний дундажаар эрэмбэлнэ; тэнцвэл
- * ЭЕШ-ын оноо, дараа нь голч дүнгээр шийднэ.
+ * Төрөл тус бүрийн эцсийн эрэмбэ. Зөвхөн баталгаажсан үнэлгээний дундажаар
+ * эрэмбэлнэ; тэнцвэл тухайн төрлийн гол үзүүлэлтээр шийднэ.
  */
-export async function getRanking(): Promise<RankingResult | null> {
-  const call = await getActiveCall();
-  if (!call) return null;
+export async function getRankings(callId?: string): Promise<CallRanking[]> {
+  const calls = await getActiveCalls();
+  const scoped = callId ? calls.filter((call) => call.id === callId) : calls;
 
+  return Promise.all(scoped.map((call) => rankCall(call)));
+}
+
+async function rankCall(call: ActiveCall): Promise<CallRanking> {
   const applications = await prisma.application.findMany({
-    where: {
-      callId: call.id,
-      status: { not: ApplicationStatus.DRAFT },
-    },
+    where: { callId: call.id, status: { not: ApplicationStatus.DRAFT } },
     include: {
       decision: true,
-      evaluations: {
-        select: { total: true, scores: true, submittedAt: true },
-      },
+      evaluations: { select: { total: true, scores: true, submittedAt: true } },
     },
   });
 
@@ -63,8 +62,10 @@ export async function getRanking(): Promise<RankingResult | null> {
       soum: application.soum,
       university: application.university,
       major: application.major,
-      examScore: application.examScore,
-      gpa: application.gpa,
+      keyMetric:
+        call.track === "STUDENT"
+          ? application.universityGpa
+          : application.examScore,
       average,
       perCriterion,
       reviewerCount,
@@ -74,19 +75,14 @@ export async function getRanking(): Promise<RankingResult | null> {
     };
   });
 
-  const ranked = scored
+  const rows = scored
     .filter((row) => row.average !== null)
     .sort(
       (a, b) =>
         (b.average ?? 0) - (a.average ?? 0) ||
-        (b.examScore ?? 0) - (a.examScore ?? 0) ||
-        (b.gpa ?? 0) - (a.gpa ?? 0),
+        (b.keyMetric ?? 0) - (a.keyMetric ?? 0),
     )
     .map((row, index) => ({ ...row, rank: index + 1 }));
 
-  return {
-    call,
-    rows: ranked,
-    unscored: scored.length - ranked.length,
-  };
+  return { call, rows, unscored: scored.length - rows.length };
 }

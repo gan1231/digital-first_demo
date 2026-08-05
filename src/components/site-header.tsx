@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { logout } from "@/app/(auth)/actions";
 import { getCurrentUser, isStaff } from "@/lib/auth";
-import { org } from "@/lib/brand";
+import { department, fund, org } from "@/lib/brand";
 
 const navigation = [
   { href: "/#tetgeleg", label: "Тэтгэлгийн тухай" },
@@ -25,20 +25,30 @@ export async function SiteHeader() {
       <div className="border-b-2 border-brand-orange bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/logo.svg"
-              alt=""
-              width={44}
-              height={44}
-              priority
-              className="size-11"
-            />
+            <span className="flex items-center gap-2">
+              <Image
+                src={org.logo}
+                alt={org.name}
+                width={44}
+                height={44}
+                priority
+                className="size-11"
+              />
+              <Image
+                src={department.logo}
+                alt={department.name}
+                width={44}
+                height={44}
+                priority
+                className="size-11"
+              />
+            </span>
             <span className="leading-tight">
               <span className="block text-[15px] font-medium text-neutral-900">
-                {org.siteName}
+                {fund.name}
               </span>
               <span className="block text-xs text-neutral-500">
-                {org.shortName}
+                {department.shortName}
               </span>
             </span>
           </Link>

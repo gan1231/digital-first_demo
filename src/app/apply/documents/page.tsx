@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getOrCreateApplication } from "@/lib/application";
+import { redirect } from "next/navigation";
+import { GENERATED_CODES, getApplicationContext } from "@/lib/application";
 import { Alert, Card } from "@/components/ui";
 import { Uploader } from "./uploader";
 
 export const metadata: Metadata = { title: "Материал хавсаргах" };
 
-/** Эдгээр материалыг систем анкет, эссэнээс үүсгэх тул файл шаардахгүй. */
-const GENERATED_CODES = ["APPLICATION_FORM", "ESSAY"];
-
 export default async function DocumentsStepPage() {
   const user = await requireUser("/apply/documents");
-  const context = await getOrCreateApplication(user.id);
+  const context = await getApplicationContext(user.id);
 
-  if (!context) return null;
+  if (!context) redirect("/apply/track");
 
   const { call, application } = context;
   const requirements = call.requirements.filter(

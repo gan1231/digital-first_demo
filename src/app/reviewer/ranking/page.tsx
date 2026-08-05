@@ -3,7 +3,8 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth";
-import { getRanking } from "@/lib/ranking";
+import { trackLabels } from "@/lib/call";
+import { getRankings, type CallRanking } from "@/lib/ranking";
 import { Alert } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Эцсийн жагсаалт" };
@@ -15,23 +16,55 @@ const decisionLabels: Record<string, string> = {
   WAITLISTED: "Нөөц",
 };
 
+/** Багана нарийн байхын тулд шалгуурын товч нэр. */
+const shortLabels: Record<string, string> = {
+  MAJOR_FIT: "Мэргэжил",
+  EXAM_SCORE: "ЭЕШ",
+  GPA: "Голч",
+  UNIVERSITY_GPA: "GPA",
+  SOCIAL: "Нийгэм",
+  CONDUCT: "Суралцахуй",
+  ESSAY: "Эссэ",
+  INTERVIEW: "Ярилцлага",
+};
+
 export default async function RankingPage() {
   await requireRole(Role.REVIEWER, Role.ADMIN);
-  const result = await getRanking();
+  const rankings = await getRankings();
 
-  if (!result) {
+  if (rankings.length === 0) {
     return <Alert tone="warning">Идэвхтэй тэтгэлгийн зарлал алга байна.</Alert>;
   }
 
-  const { call, rows, unscored } = result;
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-xl font-medium text-neutral-900">Эцсийн жагсаалт</h1>
+        <p className="mt-0.5 text-sm text-neutral-600">
+          Эрэмбэ нь баталгаажсан үнэлгээний дундажаар тогтоно. «Зөрүү» багана нь
+          комиссын гишүүдийн онооны хамгийн их зөрүү — 15-аас дээш бол дахин
+          хэлэлцэх шаардлагатай.
+        </p>
+      </div>
+
+      {rankings.map((ranking) => (
+        <RankingTable key={ranking.call.id} ranking={ranking} />
+      ))}
+    </div>
+  );
+}
+
+function RankingTable({ ranking }: { ranking: CallRanking }) {
+  const { call, rows, unscored } = ranking;
+  const columnCount = 5 + call.criteria.length + 3;
 
   return (
-    <div className="space-y-4">
+    <section className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-medium text-neutral-900">
-            Эцсийн жагсаалт
-          </h1>
+          <h2 className="text-base font-medium text-neutral-900">
+            {trackLabels[call.track]}
+          </h2>
           <p className="mt-0.5 text-sm text-neutral-600">
             {call.name} · тэтгэлгийн тоо {call.quota} · эрэмбэлэгдсэн{" "}
             {rows.length}
@@ -39,7 +72,7 @@ export default async function RankingPage() {
         </div>
 
         <a
-          href="/reviewer/ranking/export"
+          href={`/reviewer/ranking/export?call=${call.id}`}
           className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-800 transition-colors hover:bg-neutral-50"
         >
           CSV татах
@@ -73,17 +106,7 @@ export default async function RankingPage() {
                     className="px-2 py-2 text-right font-medium"
                     title={criterion.label}
                   >
-                    {criterion.code === "MAJOR_FIT"
-                      ? "Мэргэжил"
-                      : criterion.code === "EXAM_SCORE"
-                        ? "ЭЕШ"
-                        : criterion.code === "GPA"
-                          ? "Голч"
-                          : criterion.code === "SOCIAL"
-                            ? "Нийгэм"
-                            : criterion.code === "ESSAY"
-                              ? "Эссэ"
-                              : "Ярилцлага"}
+                    {shortLabels[criterion.code] ?? criterion.code}
                     <span className="block text-[10px] font-normal text-neutral-400">
                       /{criterion.maxScore}
                     </span>
@@ -115,7 +138,7 @@ export default async function RankingPage() {
                       </span>
                     </td>
                     <td className="px-3 py-2">{row.soum ?? "—"}</td>
-                    <td className="max-w-[200px] truncate px-3 py-2">
+                    <td className="max-w-[180px] truncate px-3 py-2">
                       {row.major ?? "—"}
                     </td>
                     {call.criteria.map((criterion) => (
@@ -138,7 +161,9 @@ export default async function RankingPage() {
                       ) : (
                         <span
                           className={
-                            row.spread > 15 ? "text-red-700" : "text-neutral-600"
+                            row.spread > 15
+                              ? "text-red-700"
+                              : "text-neutral-600"
                           }
                         >
                           {row.spread}
@@ -153,7 +178,7 @@ export default async function RankingPage() {
                   {row.rank === call.quota && rows.length > call.quota ? (
                     <tr>
                       <td
-                        colSpan={5 + call.criteria.length + 3}
+                        colSpan={columnCount}
                         className="border-y-2 border-dashed border-brand-orange bg-brand-sand px-3 py-1.5 text-center text-xs text-amber-900"
                       >
                         Тэтгэлгийн хязгаар — {call.quota} хүн
@@ -166,13 +191,6 @@ export default async function RankingPage() {
           </table>
         </div>
       )}
-
-      <p className="text-xs text-neutral-500">
-        Эрэмбэ нь баталгаажсан үнэлгээний дундажаар тогтоно. Оноо тэнцвэл
-        ЭЕШ-ын оноо, дараа нь голч дүнгээр шийднэ. «Зөрүү» багана нь комиссын
-        гишүүдийн онооны хамгийн их зөрүүг харуулна — 15-аас дээш бол дахин
-        хэлэлцэх шаардлагатай.
-      </p>
-    </div>
+    </section>
   );
 }

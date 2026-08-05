@@ -38,6 +38,15 @@ enum AutoScoreSource {
   NONE
   EXAM_SCORE
   GPA
+  UNIVERSITY_GPA
+}
+
+/// Тэтгэлгийн төрөл. Төрөл тус бүр өөрийн материал, шалгуур, квоттой.
+enum CallTrack {
+  /// 12 дугаар анги төгсөгч
+  GRADUATE
+  /// Одоо суралцаж буй 2, 3 дугаар курсийн оюутан
+  STUDENT
 }
 
 enum TokenPurpose {
@@ -94,19 +103,24 @@ model VerificationToken {
 
 /// Нэг жилийн тэтгэлгийн урилга. Шалгуур, хугацаа, тоо хэмжээ энд тодорхойлогдоно.
 model ScholarshipCall {
-  id            String   @id @default(cuid())
-  name          String
-  year          Int
-  description   String?
-  opensAt       DateTime
-  closesAt      DateTime
-  quota         Int
-  isActive      Boolean  @default(false)
-  minExamScore  Int?
-  minGpa        Float?
-  requiredAimag String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String    @id @default(cuid())
+  name             String
+  track            CallTrack @default(GRADUATE)
+  year             Int
+  /// «2026-2027 хичээлийн жил» гэх мэт харагдах бичиглэл.
+  academicYear     String?
+  description      String?
+  opensAt          DateTime
+  closesAt         DateTime
+  quota            Int
+  isActive         Boolean   @default(false)
+  minExamScore     Int?
+  minGpa           Float?
+  /// Оюутны тэтгэлэгт: их сургуулийн голч (4.0 систем) доод хязгаар.
+  minUniversityGpa Float?
+  requiredAimag    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   requirements DocumentRequirement[]
   criteria     ScoringCriterion[]
@@ -171,11 +185,17 @@ model Application {
   soum       String?
   address    String?
 
-  // Боловсрол
+  // Боловсрол — 12 дугаар анги төгсөгчид
   school         String?
   graduationYear Int?
   examScore      Int?
   gpa            Float?
+
+  // Боловсрол — одоо суралцаж буй оюутнууд
+  /// Одоо суралцаж буй курс (2 эсхүл 3).
+  courseYear    Int?
+  /// Их сургуулийн голч дүн, 4.0 систем.
+  universityGpa Float?
 
   // Мэргэжлийн сонголт
   university    String?

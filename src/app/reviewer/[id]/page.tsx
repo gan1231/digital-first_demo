@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Role } from "@prisma/client";
+import { CallTrack, Role } from "@prisma/client";
 import { requireRole, writeAudit } from "@/lib/auth";
+import { GENERATED_CODES } from "@/lib/application-shared";
+import { trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
 import { averageEvaluations, parseScores, suggestScore } from "@/lib/scoring";
 import { Alert, Card, StatusBadge } from "@/components/ui";
@@ -11,8 +13,6 @@ import { ScoringForm, type CriterionView } from "./scoring-form";
 
 export const metadata: Metadata = { title: "Өргөдөл үнэлэх" };
 export const dynamic = "force-dynamic";
-
-const GENERATED_CODES = ["APPLICATION_FORM", "ESSAY"];
 
 export default async function ApplicationReviewPage({
   params,
@@ -89,6 +89,9 @@ export default async function ApplicationReviewPage({
             <div className="text-right">
               <StatusBadge status={application.status} />
               <p className="mt-1 text-xs text-neutral-500">
+                {trackLabels[application.call.track]}
+              </p>
+              <p className="text-xs text-neutral-500">
                 Дундаж оноо: {average ?? "—"}{" "}
                 {reviewerCount > 0 ? `(${reviewerCount} гишүүн)` : ""}
               </p>
@@ -103,15 +106,36 @@ export default async function ApplicationReviewPage({
               value={application.birthDate?.toLocaleDateString("mn-MN")}
             />
             <Item label="Төгссөн сургууль" value={application.school} />
-            <Item
-              label="Төгссөн он"
-              value={application.graduationYear?.toString()}
-            />
-            <Item
-              label="ЭЕШ-ын дундаж"
-              value={application.examScore?.toString()}
-            />
-            <Item label="Голч дүн" value={application.gpa?.toString()} />
+
+            {application.call.track === CallTrack.STUDENT ? (
+              <>
+                <Item
+                  label="Суралцаж буй курс"
+                  value={
+                    application.courseYear
+                      ? `${application.courseYear} дугаар курс`
+                      : null
+                  }
+                />
+                <Item
+                  label="Голч дүн (GPA)"
+                  value={application.universityGpa?.toFixed(2)}
+                />
+              </>
+            ) : (
+              <>
+                <Item
+                  label="Төгссөн он"
+                  value={application.graduationYear?.toString()}
+                />
+                <Item
+                  label="ЭЕШ-ын дундаж"
+                  value={application.examScore?.toString()}
+                />
+                <Item label="Голч дүн" value={application.gpa?.toString()} />
+              </>
+            )}
+
             <Item label="Их сургууль" value={application.university} />
             <Item label="Мэргэжил" value={application.major} />
             <Item
