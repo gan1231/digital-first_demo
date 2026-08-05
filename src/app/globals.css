@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  /* Дорноговь аймгийн Засаг даргын Тамгын газрын логоны өнгө */
+  --color-brand-blue: #0a5ca8;
+  --color-brand-blue-dark: #084a87;
+  --color-brand-orange: #e8821e;
+  --color-brand-orange-dark: #b25e0f;
+  --color-brand-gold: #f5a623;
+  --color-brand-sand: #fdf0df;
+
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial,
+    sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-white text-neutral-900 antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}

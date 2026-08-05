@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  APPLICANT
+  REVIEWER
+  ADMIN
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  NEEDS_FIX
+  APPROVED
+  REJECTED
+}
+
+enum DecisionResult {
+  APPROVED
+  REJECTED
+  WAITLISTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+/// Шалгуурын оноог анкетын тоон утгаас автоматаар санал болгох эх сурвалж.
+enum AutoScoreSource {
+  NONE
+  EXAM_SCORE
+  GPA
+}
+
+enum TokenPurpose {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  name            String
+  phone           String?
+  role            Role      @default(APPLICANT)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  applications Application[]
+  evaluations  Evaluation[]
+  decisions    Decision[]          @relation("DecidedBy")
+  auditLogs    AuditLog[]
+  sessions     Session[]
+  tokens       VerificationToken[]
+}
+
+/// Нэвтрэлтийн session. Cookie доторх түүхий токеныг хадгалахгүй — зөвхөн
+/// SHA-256 хэшийг. DB задарсан ч session хулгайлагдахгүй.
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  id        String       @id @default(cuid())
+  tokenHash String       @unique
+  userId    String
+  purpose   TokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+/// Нэг жилийн тэтгэлгийн урилга. Шалгуур, хугацаа, тоо хэмжээ энд тодорхойлогдоно.
+model ScholarshipCall {
+  id            String   @id @default(cuid())
+  name          String
+  year          Int
+  description   String?
+  opensAt       DateTime
+  closesAt      DateTime
+  quota         Int
+  isActive      Boolean  @default(false)
+  minExamScore  Int?
+  minGpa        Float?
+  requiredAimag String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  requirements DocumentRequirement[]
+  criteria     ScoringCriterion[]
+  applications Application[]
+
+  @@unique([year, name])
+}
+
+/// Журмын шалгуур үзүүлэлт. Нийт оноо 100 болохоор тохируулагдана.
+/// Хүснэгт болгосон учир журам өөрчлөгдөхөд код хөндөхгүйгээр засагдана.
+model ScoringCriterion {
+  id          String          @id @default(cuid())
+  callId      String
+  code        String
+  label       String
+  description String?
+  maxScore    Int
+  autoSource  AutoScoreSource @default(NONE)
+  /// Автомат бодолтын хуваарь: жишээ нь ЭЕШ-ын дээд оноо 800, голчийн дээд 100.
+  autoInputMax Float?
+  sortOrder   Int             @default(0)
+
+  call ScholarshipCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@unique([callId, code])
+  @@index([callId, sortOrder])
+}
+
+/// Бүрдүүлэх материалын жагсаалт. Нүүр хуудас, анкетын хавсралт, комиссын
+/// бүрдэл шалгах check-list гурав энэ хүснэгтээс уншина.
+model DocumentRequirement {
+  id            String  @id @default(cuid())
+  callId        String
+  code          String
+  label         String
+  description   String?
+  isRequired    Boolean @default(true)
+  allowMultiple Boolean @default(false)
+  sortOrder     Int     @default(0)
+
+  call ScholarshipCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@unique([callId, code])
+  @@index([callId, sortOrder])
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  userId      String
+  callId      String
+  status      ApplicationStatus @default(DRAFT)
+  submittedAt DateTime?
+
+  // Хувийн мэдээлэл
+  lastName   String?
+  firstName  String?
+  registerNo String?
+  birthDate  DateTime?
+  gender     Gender?
+  phone      String?
+  aimag      String?
+  soum       String?
+  address    String?
+
+  // Боловсрол
+  school         String?
+  graduationYear Int?
+  examScore      Int?
+  gpa            Float?
+
+  // Мэргэжлийн сонголт
+  university    String?
+  major         String?
+  studyYears    Int?
+  tuitionAmount Int?
+
+  // Эссэ
+  essayText      String?
+  essayWordCount Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  call        ScholarshipCall @relation(fields: [callId], references: [id])
+  documents   Document[]
+  evaluations Evaluation[]
+  decision    Decision?
+  emailLogs   EmailLog[]
+
+  @@unique([userId, callId])
+  @@index([callId, status])
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  applicationId   String
+  requirementCode String
+  storageKey      String   @unique
+  fileName        String
+  mimeType        String
+  size            Int
+  uploadedAt      DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model Evaluation {
+  id            String   @id @default(cuid())
+  applicationId String
+  reviewerId    String
+  /// { [criterionCode]: { score: number, comment: string } }
+  scores        Json
+  total         Float
+  comment       String?
+  /// Баталгаажуулаагүй үнэлгээ (ноорог) эцсийн жагсаалтад тооцогдохгүй.
+  submittedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation(fields: [reviewerId], references: [id])
+
+  @@unique([applicationId, reviewerId])
+}
+
+model Decision {
+  id            String         @id @default(cuid())
+  applicationId String         @unique
+  result        DecisionResult
+  decidedById   String
+  decidedAt     DateTime       @default(now())
+  note          String?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  decidedBy   User        @relation("DecidedBy", fields: [decidedById], references: [id])
+}
+
+model EmailLog {
+  id            String   @id @default(cuid())
+  applicationId String?
+  to            String
+  template      String
+  subject       String
+  sentAt        DateTime @default(now())
+  status        String
+  error         String?
+
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+}
+
+/// Хувийн мэдээлэлтэй баримт үзсэн, шийдвэр гаргасан бүх үйлдлийн мөрдөл.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String
+  meta       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
