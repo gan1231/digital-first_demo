@@ -110,6 +110,24 @@ export const essaySchema = z.object({
   essayText: z.string().trim().min(1, "Эссэгээ бичнэ үү."),
 });
 
+/**
+ * Бүртгэлийн нэг мөр нэрийг овог/нэр болгон салгана — анкетын хувийн
+ * мэдээллийг бүртгэлээс автоматаар дүүргэхэд хэрэглэнэ.
+ * «Бат-Эрдэнэ Сувд» → овог: Бат-Эрдэнэ, нэр: Сувд.
+ */
+export function splitFullName(fullName: string | null | undefined): {
+  lastName: string;
+  firstName: string;
+} {
+  const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length < 2) {
+    return { lastName: "", firstName: parts[0] ?? "" };
+  }
+
+  return { lastName: parts[0], firstName: parts.slice(1).join(" ") };
+}
+
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }

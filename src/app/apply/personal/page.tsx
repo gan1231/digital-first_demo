@@ -1,9 +1,9 @@
 ﻿import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getApplicationContext } from "@/lib/application";
+import { getApplicationContext, splitFullName } from "@/lib/application";
 import { SOUMS } from "@/lib/soum";
-import { Card, Field, inputClass } from "@/components/ui";
+import { Alert, Card, Field, inputClass } from "@/components/ui";
 import { saveStep } from "../actions";
 import { StepForm } from "../step-form";
 
@@ -20,6 +20,9 @@ export default async function PersonalStepPage() {
   if (!context) redirect("/apply/track");
 
   const application = context.application;
+  // Овог, нэр, утас, и-мэйлийг дахин бичүүлэхгүй — бүртгэлийн мэдээллээс
+  // автоматаар татна. Анкетад хадгалсан утга байвал тэр нь давамгайлна.
+  const account = splitFullName(user.name);
 
   return (
     <Card
@@ -27,13 +30,18 @@ export default async function PersonalStepPage() {
       description="Иргэний үнэмлэх дээрх мэдээлэлтэй тохирч байх ёстой."
     >
       <StepForm action={saveStep.bind(null, "personal")}>
+        <Alert tone="info">
+          Овог, нэр, утасны дугаар, и-мэйл хаягийг бүртгэлийн мэдээллээс
+          автоматаар татав. Зөрүүтэй бол энд засаж хадгална уу.
+        </Alert>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Овог" htmlFor="lastName" required>
             <input
               id="lastName"
               name="lastName"
               required
-              defaultValue={application.lastName ?? ""}
+              defaultValue={application.lastName ?? account.lastName}
               className={inputClass}
             />
           </Field>
@@ -43,7 +51,7 @@ export default async function PersonalStepPage() {
               id="firstName"
               name="firstName"
               required
-              defaultValue={application.firstName ?? ""}
+              defaultValue={application.firstName ?? account.firstName}
               className={inputClass}
             />
           </Field>
@@ -98,6 +106,20 @@ export default async function PersonalStepPage() {
               required
               defaultValue={application.phone ?? user.phone ?? ""}
               className={inputClass}
+            />
+          </Field>
+
+          <Field
+            label="И-мэйл хаяг"
+            htmlFor="email"
+            hint="Бүртгэлийн хаяг. Шийдвэрийг энэ хаягаар мэдэгдэнэ."
+          >
+            <input
+              id="email"
+              type="email"
+              readOnly
+              defaultValue={user.email}
+              className={`${inputClass} bg-neutral-50 text-neutral-600`}
             />
           </Field>
 
