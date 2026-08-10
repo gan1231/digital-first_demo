@@ -14,7 +14,7 @@ export default async function VerifyPage({
   const user = await consumeVerificationToken(token);
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6">
+    <div className="mx-auto max-w-md rounded-xl border border-neutral-200 bg-white p-6">
       {user ? (
         <>
           <Alert tone="success" title="И-мэйл хаяг баталгаажлаа">

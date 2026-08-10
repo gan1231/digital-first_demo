@@ -1,6 +1,7 @@
 import type { ActiveCall } from "@/lib/call";
 import { formatCallDate, getCallTiming, trackLabels } from "@/lib/call";
 import { GENERATED_CODES } from "@/lib/application-shared";
+import { Countdown } from "@/components/countdown";
 
 /**
  * Нэг төрлийн тэтгэлгийн товч танилцуулга — материалын жагсаалт, шалгуур,
@@ -17,6 +18,9 @@ export function CallSummary({
   const documents = call.requirements.filter(
     (requirement) => !GENERATED_CODES.includes(requirement.code),
   );
+  
+  const targetDeadline = new Date("2026-08-20T23:59:00+08:00");
+  const hasClosed = new Date() > targetDeadline;
 
   return (
     <section className="flex h-full flex-col rounded-xl border border-neutral-200 bg-white p-5">
@@ -38,24 +42,24 @@ export function CallSummary({
         <div className="rounded-lg bg-neutral-50 p-2.5">
           <dt className="text-[11px] text-neutral-500">Хугацаа дуусах</dt>
           <dd className="mt-0.5 font-medium">
-            {formatCallDate(call.closesAt)}
+            {formatCallDate(targetDeadline)}
           </dd>
         </div>
         <div className="rounded-lg bg-neutral-50 p-2.5">
           <dt className="text-[11px] text-neutral-500">
-            {timing.hasClosed ? "Төлөв" : "Үлдсэн хоног"}
+            {hasClosed ? "Төлөв" : "Үлдсэн хугацаа"}
           </dt>
           <dd
             className={`mt-0.5 font-medium ${
               timing.isUrgent ? "text-brand-orange-dark" : ""
             }`}
           >
-            {timing.hasClosed ? "Хаагдсан" : timing.daysLeft}
+            {hasClosed ? "Хаагдсан" : <Countdown targetDate={targetDeadline} />}
           </dd>
         </div>
         <div className="rounded-lg bg-neutral-50 p-2.5">
-          <dt className="text-[11px] text-neutral-500">Тэтгэлгийн тоо</dt>
-          <dd className="mt-0.5 font-medium">{call.quota}</dd>
+          <dt className="text-[11px] text-neutral-500">Тэтгэлэг горилогчийн тоо</dt>
+          <dd className="mt-0.5 font-medium">{call._count.applications}</dd>
         </div>
       </dl>
 

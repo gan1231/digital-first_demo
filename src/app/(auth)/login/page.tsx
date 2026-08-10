@@ -18,7 +18,7 @@ export default async function LoginPage({
   const { next } = await searchParams;
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6">
+    <div className="mx-auto max-w-md rounded-xl border border-neutral-200 bg-white p-6">
       <h1 className="text-xl font-medium text-neutral-900">Нэвтрэх</h1>
       <p className="mt-1 text-sm text-neutral-600">
         Бүртгэлтэй и-мэйл хаяг, нууц үгээ оруулна уу.

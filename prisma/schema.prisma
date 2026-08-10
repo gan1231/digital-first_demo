@@ -13,6 +13,15 @@ enum Role {
   ADMIN
 }
 
+enum ReviewSection {
+  GUARANTOR
+  APPLICATION_INFO
+  ACADEMIC
+  SCHOOL
+  ESSAY
+  SOCIAL
+}
+
 enum ApplicationStatus {
   DRAFT
   SUBMITTED
@@ -33,6 +42,20 @@ enum Gender {
   FEMALE
 }
 
+/// Анкетын 1.12 «Зорилтот бүлгийн хэлбэр». Нэг хүн нэгээс олонд хамаарч болно.
+enum TargetGroupType {
+  /// Бүтэн өнчин
+  ORPHAN
+  /// Хөгжлийн бэрхшээлтэй
+  DISABILITY
+  /// Төлбөрийн чадваргүй
+  LOW_INCOME
+  /// Онцгой амжилт гаргасан
+  OUTSTANDING
+  /// Бусад
+  OTHER
+}
+
 /// Шалгуурын оноог анкетын тоон утгаас автоматаар санал болгох эх сурвалж.
 enum AutoScoreSource {
   NONE
@@ -43,9 +66,9 @@ enum AutoScoreSource {
 
 /// Тэтгэлгийн төрөл. Төрөл тус бүр өөрийн материал, шалгуур, квоттой.
 enum CallTrack {
-  /// 12 дугаар анги төгсөгч
+  /// Ерөнхий боловсролын сургууль төгсөгч
   GRADUATE
-  /// Одоо суралцаж буй 2, 3 дугаар курсийн оюутан
+  /// Их, дээд сургуульд суралцаж буй оюутан
   STUDENT
 }
 
@@ -55,15 +78,18 @@ enum TokenPurpose {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  passwordHash    String
-  name            String
-  phone           String?
-  role            Role      @default(APPLICANT)
-  emailVerifiedAt DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id               String          @id @default(cuid())
+  email            String          @unique
+  passwordHash     String
+  name             String
+  phone            String?
+  organization     String?
+  jobTitle         String?
+  role             Role            @default(APPLICANT)
+  assignedSections ReviewSection[] @default([])
+  emailVerifiedAt  DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   applications Application[]
   evaluations  Evaluation[]
@@ -157,8 +183,16 @@ model DocumentRequirement {
   code          String
   label         String
   description   String?
+  /// Лавлагаа авах гадаад холбоос — жишээ нь e-mongolia-гийн үйлчилгээний хуудас.
+  helpUrl       String?
   isRequired    Boolean @default(true)
   allowMultiple Boolean @default(false)
+  /// Хавсралт бүрд «Арга хэмжээний нэр» асуух эсэх. Нийгмийн оролцооны
+  /// баримт зэрэг арга хэмжээнд холбогдох материалд л хэрэгтэй.
+  collectsEventName Boolean @default(false)
+  /// Хавсралт бүрд «Тайлбар» асуух эсэх. Лавлагаа шиг нэг утгатай баримтад
+  /// тайлбар илүүц тул зөвхөн шаардлагатай газраа асууна.
+  collectsNote      Boolean @default(false)
   sortOrder     Int     @default(0)
 
   call ScholarshipCall @relation(fields: [callId], references: [id], onDelete: Cascade)
@@ -174,16 +208,62 @@ model Application {
   status      ApplicationStatus @default(DRAFT)
   submittedAt DateTime?
 
-  // Хувийн мэдээлэл
-  lastName   String?
-  firstName  String?
-  registerNo String?
-  birthDate  DateTime?
-  gender     Gender?
-  phone      String?
-  aimag      String?
-  soum       String?
-  address    String?
+  // Хувийн мэдээлэл — «ТЭТГЭЛЭГ ГОРИЛОГЧИЙН АНКЕТ»-ын 1 дүгээр хэсэг
+  /// Эцэг (эх)-ийн нэр (1.3)
+  lastName            String?
+  /// Өөрийн нэр (1.4)
+  firstName           String?
+  /// Регистрийн дугаар — АБ12345678
+  registerNo          String?
+  /// Иргэний бүртгэлийн дугаар — үнэмлэх дээрх 12 оронтой дугаар
+  civilRegistrationNo String?
+  /// Иргэний харьяалал (1.1)
+  citizenship         String?
+  /// Ургийн овог (1.2)
+  clanName            String?
+  birthDate           DateTime?
+  gender              Gender?
+  /// Үндэс, угсаа (1.7)
+  ethnicity           String?
+  /// Төрсөн аймаг, хот (1.8)
+  birthAimag          String?
+  /// Төрсөн сум, дүүрэг (1.8)
+  birthSoum           String?
+
+  // Байнгын оршин суугаа хаяг (1.9). `address` нь задаргаанаас нэгтгэгдэж
+  // бичигдэнэ — жагсаалт, экспорт зэрэг нэг мөр хаяг хүлээдэг газруудад.
+  aimag     String?
+  soum      String?
+  bag       String?
+  khoroolol String?
+  street    String?
+  unit      String?
+  address   String?
+
+  // Холбоо барих (1.10). И-мэйл нь User.email дээр — нэвтрэх нэр нь тэр.
+  phone  String?
+  phone2 String?
+
+  // Зайлшгүй шаардлага гарсан үед харилцах хүн (1.11)
+  contactRelation String?
+  contactName     String?
+  contactPhone    String?
+
+  // Зорилтот бүлэг (1.12)
+  isTargetGroup    Boolean           @default(false)
+  targetGroupTypes TargetGroupType[]
+  /// «Бусад» сонгосон үеийн тайлбар.
+  targetGroupNote  String?
+
+  // Батлан даагч — журмын 2.1 «Батлан даагчтай байх», 5.1/5.2 «Батлан
+  // даагчийн хүсэлт». Гэрээний хэрэгжилтэд хамтран хариуцлага хүлээнэ (6.2).
+  guarantorName       String?
+  guarantorRegisterNo String?
+  /// Батлан даагч нь өргөдөгчийн хэн болох (аав, ээж, ах гэх мэт).
+  guarantorRelation   String?
+  guarantorPhone      String?
+  guarantorAddress    String?
+  guarantorWorkplace  String?
 
   // Боловсрол — 12 дугаар анги төгсөгчид
   school         String?
@@ -192,20 +272,32 @@ model Application {
   gpa            Float?
 
   // Боловсрол — одоо суралцаж буй оюутнууд
-  /// Одоо суралцаж буй курс (2 эсхүл 3).
+  /// Одоо суралцаж буй курс.
   courseYear    Int?
   /// Их сургуулийн голч дүн, 4.0 систем.
   universityGpa Float?
 
-  // Мэргэжлийн сонголт
+  // Суралцаж буй их, дээд сургууль, хөтөлбөрийн мэдээлэл (анкетын 2 дугаар хэсэг)
   university    String?
   major         String?
   studyYears    Int?
   tuitionAmount Int?
+  /// Магадлан итгэмжлэгдсэн эсэх — сургууль
+  isSchoolAccredited  Boolean @default(false)
+  /// Магадлан итгэмжлэгдсэн эсэх — хөтөлбөр
+  isProgramAccredited Boolean @default(false)
+
+  // Мэргэжил (анкетын 3 дугаар хэсэг)
+  isDemandedProfession Boolean @default(false)
+  isPriorityProfession Boolean @default(false)
+  claimedProfession    String?
 
   // Эссэ
   essayText      String?
   essayWordCount Int?
+
+  /// «Анкетаа үнэн зөв бичсэн» баталгааг тэмдэглэсэн хугацаа.
+  declaredAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -229,6 +321,11 @@ model Document {
   fileName        String
   mimeType        String
   size            Int
+  /// Аль арга хэмжээнд холбогдох баримт болох (олимпиад, тэмцээн гэх мэт).
+  eventName       String?
+  /// Өргөдөгчийн бичсэн тайлбар. Нэг шаардлагад олон баримт хавсаргах үед
+  /// аль нь юу болохыг комисст ойлгуулна.
+  note            String?
   uploadedAt      DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)

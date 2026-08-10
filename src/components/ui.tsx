@@ -6,6 +6,17 @@ export const inputClass =
 
 export const labelClass = "block text-sm font-medium text-neutral-800";
 
+/**
+ * Эсээний форматтай бичвэр. Эдитэр болон комиссын харагдац хоёулаа энэ
+ * классыг хэрэглэнэ — бичиж байхад юу харагдана, комисст мөн тэр харагдана.
+ * Tailwind-ын reset жагсаалтын цэгийг арилгадаг тул тодорхой зааж өгнө.
+ */
+export const essayProseClass =
+  "text-sm leading-relaxed text-neutral-900 [&_p]:mb-2 [&_p:last-child]:mb-0 " +
+  "[&_ul]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:pl-6 " +
+  "[&_li]:mb-0.5 [&_blockquote]:mb-2 [&_blockquote]:border-l-2 [&_blockquote]:border-neutral-300 " +
+  "[&_blockquote]:pl-3 [&_blockquote]:text-neutral-600";
+
 export function Field({
   label,
   htmlFor,

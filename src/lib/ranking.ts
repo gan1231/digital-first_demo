@@ -14,6 +14,8 @@ export type RankedRow = {
   major: string | null;
   /** Төрлөөс хамаарсан гол үзүүлэлт: ЭЕШ эсхүл их сургуулийн GPA. */
   keyMetric: number | null;
+  /** Журмын 4.4 — тэнцсэн үед давуу эрх олгох үндэслэл. */
+  isTargetGroup: boolean;
   average: number | null;
   perCriterion: Record<string, number>;
   reviewerCount: number;
@@ -31,7 +33,8 @@ export type CallRanking = {
 
 /**
  * Төрөл тус бүрийн эцсийн эрэмбэ. Зөвхөн баталгаажсан үнэлгээний дундажаар
- * эрэмбэлнэ; тэнцвэл тухайн төрлийн гол үзүүлэлтээр шийднэ.
+ * эрэмбэлнэ; тэнцвэл журмын 4.4-ийн дагуу эхлээд зорилтот бүлгийн
+ * суралцагчид, дараа нь тухайн төрлийн гол үзүүлэлт өндөртэй нь дээгүүр орно.
  */
 export async function getRankings(callId?: string): Promise<CallRanking[]> {
   const calls = await getActiveCalls();
@@ -53,6 +56,7 @@ async function rankCall(call: ActiveCall): Promise<CallRanking> {
     const { average, reviewerCount, perCriterion } = averageEvaluations(
       application.evaluations,
       call.criteria,
+      application,
     );
 
     return {
@@ -66,6 +70,7 @@ async function rankCall(call: ActiveCall): Promise<CallRanking> {
         call.track === "STUDENT"
           ? application.universityGpa
           : application.examScore,
+      isTargetGroup: application.isTargetGroup,
       average,
       perCriterion,
       reviewerCount,
@@ -80,6 +85,7 @@ async function rankCall(call: ActiveCall): Promise<CallRanking> {
     .sort(
       (a, b) =>
         (b.average ?? 0) - (a.average ?? 0) ||
+        Number(b.isTargetGroup) - Number(a.isTargetGroup) ||
         (b.keyMetric ?? 0) - (a.keyMetric ?? 0),
     )
     .map((row, index) => ({ ...row, rank: index + 1 }));

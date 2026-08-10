@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ApplicationStatus } from "@prisma/client";
+import { toPersonalData, toProgramData } from "@/lib/anket";
 import { requireUser, writeAudit } from "@/lib/auth";
 import {
   APPLY_STEPS,
   EDITABLE_STATUSES,
-  countWords,
   createApplication,
   educationSchema,
   essaySchema,
@@ -19,6 +19,7 @@ import {
   type StepSlug,
 } from "@/lib/application";
 import { getActiveCalls, getCallTiming } from "@/lib/call";
+import { countEssayWords, sanitizeEssay } from "@/lib/essay";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -76,33 +77,57 @@ export async function saveStep(
   }
 
   const raw = Object.fromEntries(formData);
+  const id = context.application.id;
 
   if (step === "essay") {
     const parsed = essaySchema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-    await prisma.application.update({
-      where: { id: context.application.id },
-      data: {
-        essayText: parsed.data.essayText,
-        essayWordCount: countWords(parsed.data.essayText),
-      },
-    });
-  } else {
-    const schema =
-      step === "personal"
-        ? personalSchema
-        : step === "major"
-          ? majorSchema
-          : educationSchema(context.call.track);
+    // Эсээ нь эдитэрээс HTML хэлбэрээр ирнэ. Комисст эргээд харагдах тул
+    // хадгалахын өмнө заавал цэвэрлэнэ.
+    const essayText = sanitizeEssay(parsed.data.essayText);
+    const essayWordCount = countEssayWords(essayText);
 
-    const parsed = schema.safeParse(raw);
+    if (essayWordCount === 0) {
+      return { error: "Эсээгээ бичнэ үү." };
+    }
+
+    await prisma.application.update({
+      where: { id },
+      data: { essayText, essayWordCount },
+    });
+  } else if (step === "personal") {
+    // Олон утгатай checkbox тул targetGroupTypes-ыг тусад нь цуглуулна.
+    const parsed = personalSchema.safeParse({
+      ...raw,
+      targetGroupTypes: formData.getAll("targetGroupTypes"),
+    });
     if (!parsed.success) return { error: parsed.error.issues[0].message };
 
     await prisma.application.update({
-      where: { id: context.application.id },
-      data: parsed.data,
+      where: { id },
+      data: toPersonalData(parsed.data),
     });
+  } else if (step === "major") {
+    const parsed = majorSchema.safeParse(raw);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    await prisma.application.update({
+      where: { id },
+      data: {
+        ...toProgramData(parsed.data),
+        studyYears: parsed.data.studyYears,
+        tuitionAmount: parsed.data.tuitionAmount,
+        ...(parsed.data.universityGpa !== undefined
+          ? { universityGpa: parsed.data.universityGpa }
+          : {}),
+      },
+    });
+  } else {
+    const parsed = educationSchema(context.call.track).safeParse(raw);
+    if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+    await prisma.application.update({ where: { id }, data: parsed.data });
   }
 
   revalidatePath("/apply", "layout");
@@ -114,13 +139,6 @@ export async function submitApplication(
   _formData: FormData,
 ): Promise<FormState> {
   const user = await requireUser("/apply/review");
-
-  if (!user.emailVerifiedAt) {
-    return {
-      error:
-        "Өргөдөл илгээхийн өмнө и-мэйл хаягаа баталгаажуулна уу. Баталгаажуулах холбоосыг хувийн хуудаснаас дахин авах боломжтой.",
-    };
-  }
 
   const context = await getApplicationContext(user.id);
   if (!context) {

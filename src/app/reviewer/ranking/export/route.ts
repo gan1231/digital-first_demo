@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       "Сум",
       "Их сургууль",
       "Мэргэжил",
+      "Зорилтот бүлэг",
       call.track === "STUDENT" ? "GPA" : "ЭЕШ",
       ...call.criteria.map(
         (criterion) => `${criterion.label} (${criterion.maxScore})`,
@@ -59,6 +60,7 @@ export async function GET(request: Request) {
           row.soum,
           row.university,
           row.major,
+          row.isTargetGroup ? "тийм" : "үгүй",
           row.keyMetric,
           ...call.criteria.map(
             (criterion) => row.perCriterion[criterion.code] ?? null,

@@ -24,7 +24,7 @@ const shortLabels: Record<string, string> = {
   UNIVERSITY_GPA: "GPA",
   SOCIAL: "Нийгэм",
   CONDUCT: "Суралцахуй",
-  ESSAY: "Эссэ",
+  ESSAY: "Эсээ",
   INTERVIEW: "Ярилцлага",
 };
 
@@ -41,9 +41,10 @@ export default async function RankingPage() {
       <div>
         <h1 className="text-xl font-medium text-neutral-900">Эцсийн жагсаалт</h1>
         <p className="mt-0.5 text-sm text-neutral-600">
-          Эрэмбэ нь баталгаажсан үнэлгээний дундажаар тогтоно. «Зөрүү» багана нь
-          комиссын гишүүдийн онооны хамгийн их зөрүү — 15-аас дээш бол дахин
-          хэлэлцэх шаардлагатай.
+          Эрэмбэ нь баталгаажсан үнэлгээний дундажаар тогтоно. Тэнцсэн
+          тохиолдолд журмын 4.4-ийн дагуу зорилтот бүлгийн суралцагч, дараа нь
+          ЭЕШ/GPA өндөртэй нь дээгүүр орно. «Зөрүү» багана нь комиссын гишүүдийн
+          онооны хамгийн их зөрүү — 15-аас дээш бол дахин хэлэлцэх шаардлагатай.
         </p>
       </div>
 
@@ -56,7 +57,7 @@ export default async function RankingPage() {
 
 function RankingTable({ ranking }: { ranking: CallRanking }) {
   const { call, rows, unscored } = ranking;
-  const columnCount = 5 + call.criteria.length + 3;
+  const columnCount = 6 + call.criteria.length + 3;
 
   return (
     <section className="space-y-3">
@@ -100,6 +101,12 @@ function RankingTable({ ranking }: { ranking: CallRanking }) {
                 <th className="px-3 py-2 font-medium">Өргөдөгч</th>
                 <th className="px-3 py-2 font-medium">Сум</th>
                 <th className="px-3 py-2 font-medium">Мэргэжил</th>
+                <th
+                  className="px-3 py-2 text-center font-medium"
+                  title="Журмын 4.4 — тэнцсэн үед давуу эрх"
+                >
+                  Зорилтот бүлэг
+                </th>
                 {call.criteria.map((criterion) => (
                   <th
                     key={criterion.code}
@@ -140,6 +147,15 @@ function RankingTable({ ranking }: { ranking: CallRanking }) {
                     <td className="px-3 py-2">{row.soum ?? "—"}</td>
                     <td className="max-w-[180px] truncate px-3 py-2">
                       {row.major ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {row.isTargetGroup ? (
+                        <span className="inline-flex rounded-full bg-brand-sand px-2 py-0.5 text-[11px] text-amber-900">
+                          тийм
+                        </span>
+                      ) : (
+                        <span className="text-neutral-400">—</span>
+                      )}
                     </td>
                     {call.criteria.map((criterion) => (
                       <td

@@ -1,45 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { inputClass } from "@/components/ui";
+import { RichTextEditor } from "@/components/rich-text-editor";
+import { ESSAY_MAX_WORDS, ESSAY_MIN_WORDS } from "@/lib/application-shared";
 
-const MIN_WORDS = 500;
-const MAX_WORDS = 1000;
-
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
+const TOPIC = "«Миний сонгосон мэргэжил, ирээдүйн зорилго»";
 
 export function EssayField({ defaultValue }: { defaultValue: string }) {
-  const [words, setWords] = useState(() => countWords(defaultValue));
-
-  const isValid = words >= MIN_WORDS && words <= MAX_WORDS;
-
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-neutral-800" htmlFor="essayText">
-        «Миний сонгосон мэргэжил, ирээдүйн зорилго»
+      <p className="block text-sm font-medium text-neutral-800">
+        {TOPIC}
         <span className="text-brand-orange"> *</span>
-      </label>
-
-      <textarea
-        id="essayText"
-        name="essayText"
-        rows={18}
-        required
-        defaultValue={defaultValue}
-        onChange={(event) => setWords(countWords(event.target.value))}
-        className={`${inputClass} resize-y leading-relaxed`}
-        placeholder="Эссэгээ энд бичнэ үү…"
-      />
-
-      <p
-        className={`text-xs ${isValid ? "text-green-700" : "text-neutral-500"}`}
-        aria-live="polite"
-      >
-        {words} үг · шаардлага {MIN_WORDS}–{MAX_WORDS} үг
-        {isValid ? " · шаардлага хангасан" : null}
       </p>
+
+      <RichTextEditor
+        name="essayText"
+        defaultValue={defaultValue}
+        minWords={ESSAY_MIN_WORDS}
+        maxWords={ESSAY_MAX_WORDS}
+        ariaLabel={TOPIC}
+        placeholder="Эсээгээ энд бичнэ үү…"
+      />
     </div>
   );
 }

@@ -81,8 +81,7 @@ export default async function DashboardPage({
               </p>
               <p className="mt-1 text-sm text-neutral-600">
                 {calls.length} төрлийн тэтгэлэг нээлттэй байна. Төрлөө сонгож
-                анкетаа алхам алхмаар бөглөнө үү — түр хадгалаад дараа
-                үргэлжлүүлж болно.
+                анкетаа бөглөнө үү — түр хадгалаад дараа үргэлжлүүлж болно.
               </p>
 
               {anyOpen ? (
@@ -148,7 +147,7 @@ function ApplicationCard({ context }: { context: ApplicationContext }) {
           <dd className="mt-0.5 font-medium">{application.documents.length}</dd>
         </div>
         <div>
-          <dt className="text-xs text-neutral-500">Эссэ</dt>
+          <dt className="text-xs text-neutral-500">Эсээ</dt>
           <dd className="mt-0.5 font-medium">
             {application.essayWordCount ?? 0} үг
           </dd>

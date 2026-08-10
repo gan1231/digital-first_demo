@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { SubmitButton } from "@/components/submit-button";
-import { Alert, inputClass } from "@/components/ui";
+import { Alert } from "@/components/ui";
 import type { FormState } from "../actions";
 
 export type CriterionView = {
@@ -10,50 +10,27 @@ export type CriterionView = {
   label: string;
   description: string | null;
   maxScore: number;
-  /** Анкетын тоон утгаас бодогдсон санал. NONE шалгуурт null. */
   suggested: number | null;
   score: number | null;
+  status?: "VERIFIED" | "REJECTED";
   comment: string;
+  isStatusOnly: boolean; // Шинэ: Зөвхөн Үнэн/Зөрүүтэй гэж тэмдэглэх эсэх
 };
 
 type ScoringFormProps = {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   criteria: CriterionView[];
-  overallComment: string;
   submittedAt: string | null;
 };
 
 export function ScoringForm({
   action,
   criteria,
-  overallComment,
   submittedAt,
 }: ScoringFormProps) {
   const [state, formAction] = useActionState<FormState, FormData>(
     action,
     undefined,
-  );
-
-  const [scores, setScores] = useState<Record<string, number>>(() =>
-    Object.fromEntries(
-      criteria.map((criterion) => [
-        criterion.code,
-        criterion.score ?? criterion.suggested ?? 0,
-      ]),
-    ),
-  );
-
-  const total =
-    Math.round(
-      criteria.reduce(
-        (sum, criterion) => sum + (scores[criterion.code] ?? 0),
-        0,
-      ) * 10,
-    ) / 10;
-
-  const maxTotal = criteria.reduce(
-    (sum, criterion) => sum + criterion.maxScore,
-    0,
   );
 
   return (
@@ -63,22 +40,18 @@ export function ScoringForm({
 
       {submittedAt ? (
         <Alert tone="info">
-          Таны үнэлгээ {submittedAt}-нд баталгаажсан. Дахин хадгалбал шинэчлэгдэнэ.
+          Таны үнэлгээ {submittedAt}-нд баталгаажсан байна.
         </Alert>
       ) : null}
 
       <div className="space-y-4">
         {criteria.map((criterion) => {
-          const isAuto = criterion.suggested !== null;
-          const value = scores[criterion.code] ?? 0;
-          const changed = isAuto && value !== criterion.suggested;
-
           return (
             <div
               key={criterion.code}
               className="border-t border-neutral-200 pt-4 first:border-0 first:pt-0"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-neutral-900">
                     {criterion.label}
@@ -90,86 +63,74 @@ export function ScoringForm({
                   ) : null}
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <input
-                    name={`score__${criterion.code}`}
-                    type="number"
-                    min={0}
-                    max={criterion.maxScore}
-                    /* Автомат бодогдсон оноо нэг аравтын нарийвчлалтай ирдэг
-                       тул алхам нь 0.1 байх ёстой — эс тэгвээс браузерын
-                       шалгалтад унаж форм чимээгүй илгээгдэхгүй болно. */
-                    step="0.1"
-                    required
-                    value={value}
-                    onChange={(event) =>
-                      setScores((previous) => ({
-                        ...previous,
-                        [criterion.code]: Number(event.target.value),
-                      }))
-                    }
-                    className={`${inputClass} w-20 text-right tabular-nums`}
-                  />
-                  <span className="text-sm text-neutral-500">
-                    / {criterion.maxScore}
-                  </span>
-                </div>
-              </div>
-
-              {isAuto ? (
-                <p className="mt-1 text-xs text-neutral-500">
-                  {changed ? (
-                    <span className="text-amber-700">
-                      Гараар засварласан (автомат санал: {criterion.suggested})
+                {criterion.isStatusOnly ? (
+                  <div className="flex gap-4 mt-2">
+                    <label className="flex items-center gap-2 text-sm text-neutral-700">
+                      <input
+                        type="radio"
+                        name={`status__${criterion.code}`}
+                        value="VERIFIED"
+                        defaultChecked={criterion.status === "VERIFIED"}
+                        required
+                        className="text-brand-blue focus:ring-brand-blue"
+                      />
+                      Мэдээлэл үнэн зөв
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-neutral-700">
+                      <input
+                        type="radio"
+                        name={`status__${criterion.code}`}
+                        value="REJECTED"
+                        defaultChecked={criterion.status === "REJECTED"}
+                        required
+                        className="text-brand-blue focus:ring-brand-blue"
+                      />
+                      Мэдээлэл зөрүүтэй
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex shrink-0 items-center gap-1.5 mt-2">
+                    <input
+                      name={`score__${criterion.code}`}
+                      type="number"
+                      min={0}
+                      max={criterion.maxScore}
+                      step={0.1}
+                      defaultValue={criterion.score ?? criterion.suggested ?? ""}
+                      placeholder="0.0"
+                      className="w-20 rounded-md border border-neutral-300 px-2 py-1 text-right text-sm font-medium text-neutral-900 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                    />
+                    <span className="text-sm text-neutral-500">
+                      / {criterion.maxScore} оноо
                     </span>
-                  ) : (
-                    <>Анкетын мэдээллээс автоматаар бодогдсон</>
-                  )}
-                </p>
-              ) : null}
+                  </div>
+                )}
 
-              <textarea
-                name={`comment__${criterion.code}`}
-                rows={2}
-                defaultValue={criterion.comment}
-                placeholder="Онооны үндэслэл…"
-                className={`${inputClass} mt-2 resize-y text-[13px]`}
-              />
+                <textarea
+                  name={`comment__${criterion.code}`}
+                  rows={2}
+                  defaultValue={criterion.comment}
+                  placeholder="Тайлбар бичих..."
+                  required
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                />
+              </div>
             </div>
           );
         })}
       </div>
 
       <div className="border-t border-neutral-200 pt-4">
-        <label
-          className="block text-sm font-medium text-neutral-800"
-          htmlFor="comment"
-        >
-          Ерөнхий дүгнэлт
-        </label>
-        <textarea
-          id="comment"
-          name="comment"
-          rows={3}
-          defaultValue={overallComment}
-          className={`${inputClass} mt-1.5 resize-y text-[13px]`}
-        />
-      </div>
-
-      <div className="sticky bottom-0 -mx-5 flex items-center justify-between gap-3 border-t border-neutral-200 bg-white px-5 py-3">
-        <p className="text-sm">
-          Нийт оноо{" "}
-          <span className="text-lg font-medium tabular-nums text-neutral-900">
-            {total}
-          </span>
-          <span className="text-neutral-500"> / {maxTotal}</span>
-        </p>
-
-        <div className="flex gap-2">
-          <SubmitButton variant="secondary" name="intent" value="draft">
-            Түр хадгалах
+        <div className="flex items-center justify-end gap-3">
+          <SubmitButton
+            name="intent"
+            value="save"
+            variant="secondary"
+            pendingLabel="Хадгалж байна…"
+          >
+            Ноороглох
           </SubmitButton>
-          <SubmitButton name="intent" value="submit">
+          <SubmitButton name="intent" value="submit" pendingLabel="Хадгалж байна…">
             Баталгаажуулах
           </SubmitButton>
         </div>

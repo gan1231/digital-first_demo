@@ -48,6 +48,17 @@ export default async function DocumentsStepPage() {
                       {requirement.description}
                     </p>
                   ) : null}
+                  {requirement.helpUrl ? (
+                    <a
+                      href={requirement.helpUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-brand-blue hover:underline"
+                    >
+                      Лавлагаа авах холбоос
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  ) : null}
                 </div>
                 {!requirement.isRequired ? (
                   <span className="shrink-0 rounded-full bg-brand-sand px-2.5 py-0.5 text-[11px] text-amber-800">
@@ -59,11 +70,15 @@ export default async function DocumentsStepPage() {
               <Uploader
                 requirementCode={requirement.code}
                 allowMultiple={requirement.allowMultiple}
+                collectsEventName={requirement.collectsEventName}
+                collectsNote={requirement.collectsNote}
                 documents={documents.map((document) => ({
                   id: document.id,
                   fileName: document.fileName,
                   size: document.size,
                   requirementCode: document.requirementCode,
+                  eventName: document.eventName,
+                  note: document.note,
                 }))}
               />
             </div>
@@ -71,7 +86,7 @@ export default async function DocumentsStepPage() {
         })}
 
         <Alert tone="info">
-          Анкет болон эссэг систем автоматаар бүрдүүлэх тул тусад нь хавсаргах
+          Анкет болон эсээг систем автоматаар бүрдүүлэх тул тусад нь хавсаргах
           шаардлагагүй.
         </Alert>
 
