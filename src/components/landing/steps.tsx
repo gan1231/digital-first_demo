@@ -7,15 +7,15 @@ import {
 
 const steps = [
   {
-    icon: UserPlusIcon,
-    title: "1. Бүртгүүлэх",
-    text: "И-мэйлээ баталгаажуулна",
+    icon: FormIcon,
+    title: "1. Анкет бөглөх",
+    text: "Тэтгэлэг горилогчийн анкетыг онлайнаар бөглөнө",
     tone: "text-brand-blue",
   },
   {
-    icon: FormIcon,
-    title: "2. Анкет бөглөх",
-    text: "Түр хадгална, дараа үргэлжлүүлнэ",
+    icon: UserPlusIcon,
+    title: "2. Бүртгэл үүсгэх",
+    text: "И-мэйл хаяг тань нэвтрэх нэр болно",
     tone: "text-brand-blue",
   },
   {

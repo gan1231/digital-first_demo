@@ -3,7 +3,7 @@
  * (lib/application.ts нь "server-only" тул тэндээс импортлож болохгүй хэсгүүд.)
  */
 
-/** Анкет, эссэ нь системд бөглөгддөг тул файлаар хавсаргах шаардлагагүй. */
+/** Анкет, эсээ нь системд бөглөгддөг тул файлаар хавсаргах шаардлагагүй. */
 export const GENERATED_CODES = ["APPLICATION_FORM", "ESSAY"];
 
 export const ESSAY_MIN_WORDS = 500;

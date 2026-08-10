@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ApplicationStatus, CallTrack, Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth";
 import { GENERATED_CODES } from "@/lib/application-shared";
@@ -69,12 +70,38 @@ export default async function ReviewerListPage({
     orderBy: { submittedAt: "asc" },
   });
 
+  if (user.role === Role.REVIEWER) {
+    let nextAppId: string | null = null;
+    for (const app of applications) {
+      const myEval = app.evaluations.find(e => e.reviewerId === user.id);
+      if (!myEval || !myEval.submittedAt) {
+        nextAppId = app.id;
+        break;
+      }
+    }
+    if (!nextAppId && applications.length > 0) {
+      nextAppId = applications[0].id;
+    }
+    if (nextAppId) {
+      redirect(`/reviewer/${nextAppId}`);
+    } else {
+      return (
+        <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white p-6 text-center">
+          <p className="text-sm text-neutral-500">
+            Одоогоор танд хуваарилагдсан өргөдөл алга байна.
+          </p>
+        </div>
+      );
+    }
+  }
+
   const rows = applications
     .map((application) => {
       const call = calls.find((item) => item.id === application.callId)!;
       const { average, reviewerCount } = averageEvaluations(
         application.evaluations,
         call.criteria,
+        application,
       );
       const mine = application.evaluations.find(
         (evaluation) => evaluation.reviewerId === user.id,

@@ -23,9 +23,8 @@ export default async function ReviewStepPage() {
   const steps = getCompleteness(application, call);
   const problems = getBlockingProblems(steps);
   const timing = getCallTiming(call);
-  const isVerified = Boolean(user.emailVerifiedAt);
 
-  const blocked = problems.length > 0 || !timing.isOpen || !isVerified;
+  const blocked = problems.length > 0 || !timing.isOpen;
 
   return (
     <div className="space-y-4">
@@ -68,16 +67,6 @@ export default async function ReviewStepPage() {
           ))}
         </ul>
       </Card>
-
-      {!isVerified ? (
-        <Alert tone="warning" title="И-мэйл баталгаажаагүй байна">
-          Шийдвэрийг и-мэйлээр хүргүүлэх тул илгээхийн өмнө хаягаа
-          баталгаажуулах шаардлагатай.{" "}
-          <Link href="/dashboard" className="underline">
-            Баталгаажуулах холбоос авах
-          </Link>
-        </Alert>
-      ) : null}
 
       {!timing.isOpen ? (
         <Alert tone="danger" title="Хүлээн авах хугацаа дууссан">

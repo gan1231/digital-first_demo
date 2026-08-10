@@ -7,21 +7,21 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { personalAnketSchema, programAnketSchema } from "@/lib/anket";
 import { getActiveCalls, type ActiveCall } from "@/lib/call";
 import {
   ESSAY_MAX_WORDS,
   ESSAY_MIN_WORDS,
   GENERATED_CODES,
 } from "@/lib/application-shared";
-import { SOUMS } from "@/lib/soum";
 
 export { ESSAY_MAX_WORDS, ESSAY_MIN_WORDS, GENERATED_CODES };
 
 export const APPLY_STEPS = [
   { slug: "personal", label: "Хувийн мэдээлэл" },
   { slug: "education", label: "Боловсрол" },
-  { slug: "major", label: "Мэргэжлийн сонголт" },
-  { slug: "essay", label: "Эссэ" },
+  { slug: "major", label: "Сургууль, мэргэжил" },
+  { slug: "essay", label: "Эсээ" },
   { slug: "documents", label: "Материал" },
   { slug: "review", label: "Илгээх" },
 ] as const;
@@ -35,26 +35,11 @@ export const EDITABLE_STATUSES: ApplicationStatus[] = [
 
 const currentYear = new Date().getFullYear();
 
-export const personalSchema = z.object({
-  lastName: z.string().trim().min(2, "Овгоо бичнэ үү."),
-  firstName: z.string().trim().min(2, "Нэрээ бичнэ үү."),
-  registerNo: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(
-      /^[А-ЯӨҮЁ]{2}\d{8}$/,
-      "Регистрийн дугаар 2 кирилл үсэг, 8 цифрээс бүрдэнэ (жишээ: АБ12345678).",
-    ),
-  birthDate: z.coerce.date({ message: "Төрсөн огноог оруулна уу." }),
-  gender: z.enum(["MALE", "FEMALE"], { message: "Хүйсээ сонгоно уу." }),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\d{8}$/, "Утасны дугаар 8 оронтой байна."),
-  soum: z.enum(SOUMS, { message: "Сумаа сонгоно уу." }),
-  address: z.string().trim().min(4, "Хаягаа бичнэ үү."),
-});
+/**
+ * Анкетын хувийн мэдээллийг засах алхам — бүртгэлийн формтой яг ижил схем
+ * ажиллана, тиймээс шалгалт хоёр газарт салахгүй.
+ */
+export const personalSchema = personalAnketSchema;
 
 const graduateEducationSchema = z.object({
   school: z.string().trim().min(3, "Төгссөн сургуулиа бичнэ үү."),
@@ -74,11 +59,11 @@ const graduateEducationSchema = z.object({
 });
 
 const studentEducationSchema = z.object({
-  courseYear: z.coerce
+  graduationYear: z.coerce
     .number()
     .int()
-    .min(2, "Зөвхөн 2, 3 дугаар курсийн оюутан хамрагдана.")
-    .max(3, "Зөвхөн 2, 3 дугаар курсийн оюутан хамрагдана."),
+    .min(currentYear - 5, "Төгссөн он буруу байна.")
+    .max(currentYear, "Төгссөн он буруу байна."),
   universityGpa: z.coerce
     .number()
     .min(0, "Голч дүн 0-4.0 хооронд байна.")
@@ -92,9 +77,8 @@ export function educationSchema(track: CallTrack) {
     : graduateEducationSchema;
 }
 
-export const majorSchema = z.object({
-  university: z.string().trim().min(3, "Их сургуулийн нэрийг бичнэ үү."),
-  major: z.string().trim().min(2, "Мэргэжлээ бичнэ үү."),
+/** Анкетын 2, 3 дугаар хэсэг дээр суралцах хугацаа, төлбөр нэмэгдэнэ. */
+export const majorSchema = programAnketSchema.extend({
   studyYears: z.coerce
     .number()
     .int()
@@ -104,33 +88,17 @@ export const majorSchema = z.object({
     .number()
     .int()
     .min(0, "Сургалтын төлбөрийг оруулна уу."),
+  universityGpa: z.coerce
+    .number()
+    .min(0, "Голч дүн 0-4.0 хооронд байна.")
+    .max(4, "Голч дүн 0-4.0 хооронд байна.")
+    .optional(),
 });
 
+/** Эдитэрээс HTML ирнэ — үгийн тоог `lib/essay.ts` цэвэрлэсний дараа бодно. */
 export const essaySchema = z.object({
-  essayText: z.string().trim().min(1, "Эссэгээ бичнэ үү."),
+  essayText: z.string().trim().min(1, "Эсээгээ бичнэ үү."),
 });
-
-/**
- * Бүртгэлийн нэг мөр нэрийг овог/нэр болгон салгана — анкетын хувийн
- * мэдээллийг бүртгэлээс автоматаар дүүргэхэд хэрэглэнэ.
- * «Бат-Эрдэнэ Сувд» → овог: Бат-Эрдэнэ, нэр: Сувд.
- */
-export function splitFullName(fullName: string | null | undefined): {
-  lastName: string;
-  firstName: string;
-} {
-  const parts = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length < 2) {
-    return { lastName: "", firstName: parts[0] ?? "" };
-  }
-
-  return { lastName: parts[0], firstName: parts.slice(1).join(" ") };
-}
-
-export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
 
 export type ApplicationContext = {
   call: ActiveCall;
@@ -190,13 +158,43 @@ export function getCompleteness(
     !application.lastName ||
     !application.firstName ||
     !application.registerNo ||
+    !application.civilRegistrationNo ||
+    !application.citizenship ||
+    !application.clanName ||
     !application.birthDate ||
     !application.gender ||
-    !application.phone ||
+    !application.ethnicity ||
+    !application.birthAimag ||
+    !application.birthSoum ||
+    !application.aimag ||
     !application.soum ||
-    !application.address
+    !application.bag ||
+    !application.street ||
+    !application.unit ||
+    !application.phone ||
+    !application.contactRelation ||
+    !application.contactName ||
+    !application.contactPhone
   ) {
     personalProblems.push("Хувийн мэдээлэл дутуу байна.");
+  }
+
+  // Журмын 2.1 — батлан даагчтай байх.
+  if (
+    !application.guarantorName ||
+    !application.guarantorRegisterNo ||
+    !application.guarantorRelation ||
+    !application.guarantorPhone ||
+    !application.guarantorAddress
+  ) {
+    personalProblems.push("Батлан даагчийн мэдээлэл дутуу байна.");
+  }
+
+  if (
+    application.isTargetGroup &&
+    application.targetGroupTypes.length === 0
+  ) {
+    personalProblems.push("Зорилтот бүлгийн хэлбэрээ сонгоно уу.");
   }
 
   const educationProblems =
@@ -213,14 +211,34 @@ export function getCompleteness(
   ) {
     majorProblems.push("Мэргэжлийн мэдээлэл дутуу байна.");
   }
+  if (call.track === CallTrack.STUDENT) {
+    if (application.universityGpa === null) {
+      majorProblems.push("Голч дүнг оруулаагүй байна.");
+    } else if (
+      call.minUniversityGpa &&
+      application.universityGpa < call.minUniversityGpa
+    ) {
+      majorProblems.push(
+        `Голч дүн (GPA) ${call.minUniversityGpa}-аас дээш байх шаардлагатай.`,
+      );
+    }
+  }
+
+  if (!application.isSchoolAccredited && !application.isProgramAccredited) {
+    majorProblems.push("Магадлан итгэмжлэгдсэн эсэхийг тэмдэглээгүй байна.");
+  }
+
+  if (!application.claimedProfession) {
+    majorProblems.push("Тэргүүлэх болон эрэлттэй мэргэжлээс сонгоогүй байна.");
+  }
 
   const essayProblems: string[] = [];
   const words = application.essayWordCount ?? 0;
   if (!application.essayText) {
-    essayProblems.push("Эссэ бичээгүй байна.");
+    essayProblems.push("Эсээ бичээгүй байна.");
   } else if (words < ESSAY_MIN_WORDS || words > ESSAY_MAX_WORDS) {
     essayProblems.push(
-      `Эссэ ${ESSAY_MIN_WORDS}-${ESSAY_MAX_WORDS} үгтэй байх ёстой (одоо ${words}).`,
+      `Эсээ ${ESSAY_MIN_WORDS}-${ESSAY_MAX_WORDS} үгтэй байх ёстой (одоо ${words}).`,
     );
   }
 
@@ -287,23 +305,10 @@ function studentEducationProblems(
   const problems: string[] = [];
 
   if (
-    application.courseYear === null ||
-    application.universityGpa === null ||
+    application.graduationYear === null ||
     !application.school
   ) {
     return ["Суралцаж буй байдлын мэдээлэл дутуу байна."];
-  }
-
-  if (application.courseYear < 2 || application.courseYear > 3) {
-    problems.push("Зөвхөн 2, 3 дугаар курсийн оюутан хамрагдана.");
-  }
-  if (
-    call.minUniversityGpa &&
-    application.universityGpa < call.minUniversityGpa
-  ) {
-    problems.push(
-      `Голч дүн (GPA) ${call.minUniversityGpa}-аас дээш байх шаардлагатай.`,
-    );
   }
 
   return problems;

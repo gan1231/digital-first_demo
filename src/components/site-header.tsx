@@ -98,7 +98,7 @@ export async function SiteHeader() {
                   href="/register"
                   className="rounded-lg bg-brand-blue px-3.5 py-2 text-white transition-colors hover:bg-brand-blue-dark"
                 >
-                  Бүртгүүлэх
+                  Анкет бөглөх
                 </Link>
               </>
             )}

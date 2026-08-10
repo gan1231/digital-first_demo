@@ -15,6 +15,15 @@ const EDITABLE_STATUSES: ApplicationStatus[] = [
   ApplicationStatus.NEEDS_FIX,
 ];
 
+const NOTE_MAX_LENGTH = 200;
+
+/** Нэг мөрт багтах бичвэр — мөр таслалт, давхар зайг цэгцэлнэ. */
+function cleanText(value: FormDataEntryValue | null): string {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
@@ -24,9 +33,25 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("file");
   const requirementCode = String(formData.get("requirementCode") ?? "");
+  // Арга хэмжээ, гэрчилгээний нэр латинаар байх нь элбэг (IELTS, Microsoft
+  // гэх мэт) тул эдгээр хоёр талбарт кирилл үсгийн шаардлага тавихгүй.
+  const note = cleanText(formData.get("note"));
+  const eventName = cleanText(formData.get("eventName"));
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Файл ирээгүй байна." }, { status: 400 });
+  }
+
+  for (const field of [
+    { value: eventName, name: "Арга хэмжээний нэр" },
+    { value: note, name: "Тайлбар" },
+  ]) {
+    if (field.value.length > NOTE_MAX_LENGTH) {
+      return NextResponse.json(
+        { error: `${field.name} ${NOTE_MAX_LENGTH} тэмдэгтээс хэтрэхгүй.` },
+        { status: 400 },
+      );
+    }
   }
 
   if (file.size === 0) {
@@ -67,6 +92,22 @@ export async function POST(request: Request) {
     );
   }
 
+  // Асуудаг болгож тохируулсан талбарыг заавал бөглөнө — олон баримт
+  // хавсаргах үед аль нь юу болохыг комисс ялгаж чаддаг байх ёстой.
+  if (requirement.collectsEventName && !eventName) {
+    return NextResponse.json(
+      { error: "Арга хэмжээний нэрийг бичнэ үү." },
+      { status: 400 },
+    );
+  }
+
+  if (requirement.collectsNote && !note) {
+    return NextResponse.json(
+      { error: "Тайлбарыг бичнэ үү." },
+      { status: 400 },
+    );
+  }
+
   const bytes = Buffer.from(await file.arrayBuffer());
 
   // Өргөтгөл, хэрэглэгчийн мэдээлсэн төрөлд найдахгүй — эхний байтуудаар шалгана.
@@ -103,6 +144,8 @@ export async function POST(request: Request) {
       fileName: file.name,
       mimeType,
       size: bytes.byteLength,
+      eventName: eventName || null,
+      note: note || null,
     },
   });
 
@@ -120,5 +163,7 @@ export async function POST(request: Request) {
     size: document.size,
     mimeType: document.mimeType,
     requirementCode: document.requirementCode,
+    eventName: document.eventName,
+    note: document.note,
   });
 }

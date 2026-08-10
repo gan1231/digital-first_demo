@@ -15,7 +15,6 @@ import { computeTotal, type ScoreMap } from "@/lib/scoring";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
-/** Формын score__CODE / comment__CODE талбаруудыг ScoreMap болгоно. */
 function readScores(
   formData: FormData,
   criteria: ScoringCriterion[],
@@ -23,23 +22,42 @@ function readScores(
   const scores: ScoreMap = {};
 
   for (const criterion of criteria) {
-    const rawScore = formData.get(`score__${criterion.code}`);
-    const rawComment = formData.get(`comment__${criterion.code}`);
-
-    const value = Number(rawScore);
-    if (rawScore === null || rawScore === "" || Number.isNaN(value)) {
-      return { scores, error: `«${criterion.label}» оноог оруулна уу.` };
+    const commentKey = `comment__${criterion.code}`;
+    if (!formData.has(commentKey)) {
+      continue;
     }
 
-    if (value < 0 || value > criterion.maxScore) {
-      return {
-        scores,
-        error: `«${criterion.label}» оноо 0-${criterion.maxScore} хооронд байна.`,
-      };
+    const rawComment = formData.get(commentKey);
+    const rawScore = formData.get(`score__${criterion.code}`);
+    const rawStatus = formData.get(`status__${criterion.code}`);
+
+    let scoreValue: number | undefined = undefined;
+    let statusValue: "VERIFIED" | "REJECTED" | undefined = undefined;
+
+    if (rawScore !== null) {
+      const value = Number(rawScore);
+      if (rawScore === "" || Number.isNaN(value)) {
+        return { scores, error: `«${criterion.label}» оноог оруулна уу.` };
+      }
+      if (value < 0 || value > criterion.maxScore) {
+        return {
+          scores,
+          error: `«${criterion.label}» оноо 0-${criterion.maxScore} хооронд байна.`,
+        };
+      }
+      scoreValue = Math.round(value * 10) / 10;
+    } else if (rawStatus !== null) {
+      if (rawStatus !== "VERIFIED" && rawStatus !== "REJECTED") {
+        return { scores, error: `«${criterion.label}» төлөвийг зөв сонгоно уу.` };
+      }
+      statusValue = rawStatus;
+    } else {
+      return { scores, error: `«${criterion.label}» үнэлгээ байхгүй байна.` };
     }
 
     scores[criterion.code] = {
-      score: Math.round(value * 10) / 10,
+      score: scoreValue,
+      status: statusValue,
       comment: String(rawComment ?? "").trim(),
     };
   }
@@ -69,20 +87,28 @@ export async function saveEvaluation(
   }
 
   const criteria = application.call.criteria;
-  const { scores, error } = readScores(formData, criteria);
+  const { scores: newScores, error } = readScores(formData, criteria);
   if (error) return { error };
+
+  const existingEvaluation = await prisma.evaluation.findUnique({
+    where: { applicationId_reviewerId: { applicationId, reviewerId: user.id } },
+  });
+  
+  // Merge scores with existing ones so that inactive sections are not lost
+  const existingScores = existingEvaluation ? (existingEvaluation.scores as Record<string, any>) : {};
+  const scores = { ...existingScores, ...newScores };
 
   // Баталгаажуулахын өмнө тайлбар шаардана — оноо яагаад тэгсэн нь мөрдөгдөх ёстой.
   if (isFinal) {
     const missing = criteria.find(
-      (criterion) => scores[criterion.code].comment.length < 3,
+      (criterion) => scores[criterion.code]?.comment.length < 3,
     );
     if (missing) {
       return { error: `«${missing.label}» шалгуурт тайлбар бичнэ үү.` };
     }
   }
 
-  const total = computeTotal(scores, criteria);
+  const total = computeTotal(scores, criteria, application);
   const comment = String(formData.get("comment") ?? "").trim() || null;
   const submittedAt = isFinal ? new Date() : null;
 

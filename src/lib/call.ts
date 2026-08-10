@@ -9,11 +9,13 @@ import { prisma } from "@/lib/prisma";
 export type ActiveCall = ScholarshipCall & {
   requirements: DocumentRequirement[];
   criteria: ScoringCriterion[];
+  _count: { applications: number };
 };
 
 const include = {
   requirements: { orderBy: { sortOrder: "asc" } },
   criteria: { orderBy: { sortOrder: "asc" } },
+  _count: { select: { applications: true } },
 } as const;
 
 /** Идэвхтэй бүх төрлийн тэтгэлэг. Төрөл бүр өөрийн материал, шалгууртай. */
@@ -31,7 +33,7 @@ export async function getCallById(id: string): Promise<ActiveCall | null> {
 
 export const trackLabels: Record<CallTrack, string> = {
   GRADUATE: "12 дугаар анги төгсөгч",
-  STUDENT: "2, 3 дугаар курсийн оюутан",
+  STUDENT: "Их, дээд сургуулийн оюутан",
 };
 
 export type CallTiming = {

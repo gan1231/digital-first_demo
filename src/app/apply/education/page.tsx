@@ -45,29 +45,22 @@ export default async function EducationStepPage() {
 
           {isStudent ? (
             <>
-              <Field
-                label="Одоо суралцаж буй курс"
-                htmlFor="courseYear"
-                required
-                hint="Зөвхөн 2, 3 дугаар курс хамрагдана"
-              >
-                <select
-                  id="courseYear"
-                  name="courseYear"
+              <Field label="Төгссөн он" htmlFor="graduationYear" required>
+                <input
+                  id="graduationYear"
+                  name="graduationYear"
+                  type="number"
+                  inputMode="numeric"
                   required
-                  defaultValue={application.courseYear ?? ""}
+                  defaultValue={
+                    application.graduationYear ?? new Date().getFullYear()
+                  }
                   className={inputClass}
-                >
-                  <option value="" disabled>
-                    Сонгоно уу
-                  </option>
-                  <option value="2">2 дугаар курс</option>
-                  <option value="3">3 дугаар курс</option>
-                </select>
+                />
               </Field>
 
               <Field
-                label="Голч дүн (GPA)"
+                label="Голч дүн"
                 htmlFor="universityGpa"
                 required
                 hint={

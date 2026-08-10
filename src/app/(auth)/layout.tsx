@@ -10,7 +10,9 @@ export default function AuthLayout({
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1 bg-neutral-50">
-        <div className="mx-auto max-w-md px-4 py-12 sm:px-6">{children}</div>
+        {/* Бүртгэл нь бүтэн анкет тул өргөн. Нэвтрэх, баталгаажуулах хуудас
+            өөрсдөө max-w-md-д багтана. */}
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">{children}</div>
       </main>
       <SiteFooter />
     </div>

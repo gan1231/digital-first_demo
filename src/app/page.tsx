@@ -3,6 +3,7 @@ import { CallSummary } from "@/components/call-summary";
 import { Steps } from "@/components/landing/steps";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth";
 import { department, fund, org } from "@/lib/brand";
 import { getActiveCalls, getCallTiming } from "@/lib/call";
 
@@ -13,6 +14,10 @@ export default async function HomePage() {
   const calls = await getActiveCalls();
   const anyOpen = calls.some((call) => getCallTiming(call).isOpen);
   const academicYear = calls.find((call) => call.academicYear)?.academicYear;
+
+  // Бүртгэл нь анкет өөрөө тул нэвтрээгүй зочин шууд анкет руу орно.
+  const user = await getCurrentUser();
+  const applyHref = user ? "/apply" : "/register";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -39,10 +44,10 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               {anyOpen ? (
                 <Link
-                  href="/apply"
+                  href={applyHref}
                   className="rounded-lg bg-brand-orange px-6 py-2.5 text-white transition-colors hover:bg-brand-orange-dark"
                 >
-                  Өргөдөл гаргах
+                  Анкет бөглөх
                 </Link>
               ) : (
                 <span className="cursor-not-allowed rounded-lg bg-neutral-200 px-6 py-2.5 text-neutral-500">
@@ -88,7 +93,7 @@ export default async function HomePage() {
                     action={
                       getCallTiming(call).isOpen ? (
                         <Link
-                          href="/apply"
+                          href={applyHref}
                           className="block rounded-lg bg-brand-blue px-4 py-2.5 text-center text-sm text-white transition-colors hover:bg-brand-blue-dark"
                         >
                           Энэ төрлөөр өргөдөл гаргах
