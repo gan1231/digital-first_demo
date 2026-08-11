@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { CallTrack } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { anketDefaults } from "@/lib/anket";
-import { getApplicationContext } from "@/lib/application";
+import { getApplicationContext, EDITABLE_STATUSES } from "@/lib/application";
 import { AnketSection, ProgramAnketFields } from "@/components/anket-fields";
 import { Card, Field, inputClass } from "@/components/ui";
 import { saveStep } from "../actions";
@@ -25,7 +25,7 @@ export default async function MajorStepPage() {
       title="Сургууль, мэргэжил"
       description="Анкетын 2, 3 дугаар хэсэг. Сонгосон мэргэжил нь сумын хүний нөөцийн хэрэгцээнд нийцэж байгаа эсэхийг комисс үнэлнэ."
     >
-      <StepForm action={saveStep.bind(null, "major")}>
+      <StepForm action={saveStep.bind(null, "major")} isEditable={EDITABLE_STATUSES.includes(context.application.status)}>
         <div className="space-y-6">
           <ProgramAnketFields defaults={anketDefaults(application)} />
 

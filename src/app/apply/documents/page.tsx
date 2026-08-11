@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { GENERATED_CODES, getApplicationContext } from "@/lib/application";
+import { GENERATED_CODES, getApplicationContext, EDITABLE_STATUSES } from "@/lib/application";
 import { Alert, Card } from "@/components/ui";
 import { Uploader } from "./uploader";
 
@@ -80,6 +80,7 @@ export default async function DocumentsStepPage() {
                   eventName: document.eventName,
                   note: document.note,
                 }))}
+                disabled={!EDITABLE_STATUSES.includes(application.status)}
               />
             </div>
           );

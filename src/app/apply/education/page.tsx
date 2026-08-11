@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CallTrack } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
-import { getApplicationContext } from "@/lib/application";
+import { getApplicationContext, EDITABLE_STATUSES } from "@/lib/application";
 import { Card, Field, inputClass } from "@/components/ui";
 import { saveStep } from "../actions";
 import { StepForm } from "../step-form";
@@ -23,7 +23,7 @@ export default async function EducationStepPage() {
       title={isStudent ? "Суралцаж буй байдал" : "Боловсрол"}
       description="Оруулсан оноог хавсаргасан баримттай тулган шалгана."
     >
-      <StepForm action={saveStep.bind(null, "education")}>
+      <StepForm action={saveStep.bind(null, "education")} isEditable={EDITABLE_STATUSES.includes(context.application.status)}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label={

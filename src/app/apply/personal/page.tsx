@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { anketDefaults } from "@/lib/anket";
-import { getApplicationContext } from "@/lib/application";
+import { getApplicationContext, EDITABLE_STATUSES } from "@/lib/application";
 import { PersonalAnketFields } from "@/components/anket-fields";
 import { Card, Field, inputClass } from "@/components/ui";
 import { saveStep } from "../actions";
@@ -21,7 +21,7 @@ export default async function PersonalStepPage() {
       title="Хувийн мэдээлэл"
       description="Бүртгүүлэхдээ бөглөсөн анкетын 1 дүгээр хэсэг. Иргэний үнэмлэх дээрх мэдээлэлтэй тохирч байх ёстой."
     >
-      <StepForm action={saveStep.bind(null, "personal")}>
+      <StepForm action={saveStep.bind(null, "personal")} isEditable={EDITABLE_STATUSES.includes(context.application.status)}>
         <div className="space-y-6">
           <PersonalAnketFields
             defaults={anketDefaults(context.application)}

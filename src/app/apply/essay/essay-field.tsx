@@ -5,7 +5,7 @@ import { ESSAY_MAX_WORDS, ESSAY_MIN_WORDS } from "@/lib/application-shared";
 
 const TOPIC = "«Миний сонгосон мэргэжил, ирээдүйн зорилго»";
 
-export function EssayField({ defaultValue }: { defaultValue: string }) {
+export function EssayField({ defaultValue, readOnly }: { defaultValue: string; readOnly?: boolean; }) {
   return (
     <div className="space-y-1.5">
       <p className="block text-sm font-medium text-neutral-800">
@@ -20,6 +20,7 @@ export function EssayField({ defaultValue }: { defaultValue: string }) {
         maxWords={ESSAY_MAX_WORDS}
         ariaLabel={TOPIC}
         placeholder="Эсээгээ энд бичнэ үү…"
+        readOnly={readOnly}
       />
     </div>
   );

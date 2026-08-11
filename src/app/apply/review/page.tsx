@@ -6,6 +6,7 @@ import {
   getBlockingProblems,
   getCompleteness,
   getApplicationContext,
+  EDITABLE_STATUSES,
 } from "@/lib/application";
 import { formatCallDate, getCallTiming } from "@/lib/call";
 import { Alert, Card } from "@/components/ui";
@@ -23,13 +24,14 @@ export default async function ReviewStepPage() {
   const steps = getCompleteness(application, call);
   const problems = getBlockingProblems(steps);
   const timing = getCallTiming(call);
+  const isEditable = EDITABLE_STATUSES.includes(application.status);
 
   const blocked = problems.length > 0 || !timing.isOpen;
 
   return (
     <div className="space-y-4">
       <Card
-        title="Илгээхийн өмнө"
+        title={isEditable ? "Илгээхийн өмнө" : "Бүрдэл"}
         description={`Хүлээн авах эцсийн хугацаа: ${formatCallDate(call.closesAt)}`}
       >
         <ul className="space-y-2">
@@ -68,14 +70,18 @@ export default async function ReviewStepPage() {
         </ul>
       </Card>
 
-      {!timing.isOpen ? (
+      {!timing.isOpen && isEditable ? (
         <Alert tone="danger" title="Хүлээн авах хугацаа дууссан">
           Энэ жилийн өргөдөл хүлээн авах хугацаа дууссан байна.
         </Alert>
       ) : null}
 
       <Card>
-        <SubmitForm disabled={blocked} />
+        {isEditable ? (
+          <SubmitForm disabled={blocked} />
+        ) : (
+          <Alert tone="info">Энэ өргөдөл илгээгдсэн тул өөрчлөлт оруулах боломжгүй.</Alert>
+        )}
       </Card>
     </div>
   );

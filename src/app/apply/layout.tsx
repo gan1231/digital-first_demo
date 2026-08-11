@@ -19,9 +19,7 @@ export default async function ApplyLayout({
   const user = await requireUser("/apply");
   const context = await getApplicationContext(user.id);
 
-  if (context && !EDITABLE_STATUSES.includes(context.application.status)) {
-    redirect("/dashboard");
-  }
+
 
   const steps = context
     ? getCompleteness(context.application, context.call)

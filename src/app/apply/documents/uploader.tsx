@@ -21,6 +21,7 @@ type UploaderProps = {
   /** Тайлбар асуух эсэх. Лавлагаа шиг нэг утгатай баримтад илүүц. */
   collectsNote: boolean;
   documents: UploadedDocument[];
+  disabled?: boolean;
 };
 
 /** Нэг мөр: арга хэмжээний нэр, тайлбар, файл. Хараахан хуулаагүй. */
@@ -52,6 +53,7 @@ export function Uploader({
   collectsEventName,
   collectsNote,
   documents,
+  disabled,
 }: UploaderProps) {
   const router = useRouter();
   const singleInputRef = useRef<HTMLInputElement>(null);
@@ -188,22 +190,26 @@ export function Uploader({
               <span className="shrink-0 pt-0.5 text-xs text-neutral-500">
                 {formatSize(document.size)}
               </span>
-              <button
-                type="button"
-                onClick={() => remove(document.id)}
-                disabled={busy}
-                className="shrink-0 rounded px-2 py-0.5 text-xs text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
-              >
-                Устгах
-              </button>
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => remove(document.id)}
+                  disabled={busy}
+                  className="shrink-0 rounded px-2 py-0.5 text-xs text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+                >
+                  Устгах
+                </button>
+              )}
             </li>
           ))}
         </ul>
       ) : null}
 
-      {usesRows ? (
-        <div className="space-y-2">
-          {rows.map((row) => (
+      {!disabled && (
+        <>
+          {usesRows ? (
+            <div className="space-y-2">
+              {rows.map((row) => (
             <div
               key={row.key}
               className="rounded-lg border border-neutral-200 p-3"
@@ -319,6 +325,8 @@ export function Uploader({
         <p className="text-xs text-neutral-500">Хуулж байна…</p>
       ) : null}
       {error ? <p className="text-xs text-red-700">{error}</p> : null}
+    </>
+    )}
     </div>
   );
 }

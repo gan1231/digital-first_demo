@@ -99,9 +99,9 @@ export function RichTextEditor({
   name: string;
   defaultValue: string;
   minWords: number;
-  maxWords: number;
   placeholder?: string;
   ariaLabel?: string;
+  readOnly?: boolean;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [html, setHtml] = useState(defaultValue);
@@ -191,43 +191,45 @@ export function RichTextEditor({
       <input type="hidden" name={name} value={html} readOnly />
 
       <div className="overflow-hidden rounded-lg border border-neutral-300 focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/20">
-        <div
-          role="toolbar"
-          aria-label="Бичвэрийн формат"
-          className="flex flex-wrap items-center gap-1 border-b border-neutral-200 bg-neutral-50 px-1.5 py-1.5"
-        >
-          {TOOLBAR.map((group, index) => (
-            <div key={index} className="flex items-center gap-1">
-              {index > 0 ? (
-                <span
-                  aria-hidden="true"
-                  className="mx-0.5 h-5 w-px bg-neutral-300"
-                />
-              ) : null}
-              {group.map((button) => (
-                <button
-                  key={button.command + (button.value ?? "")}
-                  type="button"
-                  title={button.title}
-                  aria-label={button.title}
-                  aria-pressed={active[button.command] ?? false}
-                  // mousedown-г таслахгүй бол товч дарахад сонголт алдагдана.
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => exec(button.command, button.value)}
-                  className={`min-w-8 rounded px-2 py-1 text-sm transition-colors ${
-                    button.className ?? ""
-                  } ${
-                    active[button.command]
-                      ? "bg-brand-blue/10 text-brand-blue"
-                      : "text-neutral-700 hover:bg-neutral-200"
-                  }`}
-                >
-                  {button.label}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+        {!readOnly && (
+          <div
+            role="toolbar"
+            aria-label="Бичвэрийн формат"
+            className="flex flex-wrap items-center gap-1 border-b border-neutral-200 bg-neutral-50 px-1.5 py-1.5"
+          >
+            {TOOLBAR.map((group, index) => (
+              <div key={index} className="flex items-center gap-1">
+                {index > 0 ? (
+                  <span
+                    aria-hidden="true"
+                    className="mx-0.5 h-5 w-px bg-neutral-300"
+                  />
+                ) : null}
+                {group.map((button) => (
+                  <button
+                    key={button.command + (button.value ?? "")}
+                    type="button"
+                    title={button.title}
+                    aria-label={button.title}
+                    aria-pressed={active[button.command] ?? false}
+                    // mousedown-г таслахгүй бол товч дарахад сонголт алдагдана.
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => exec(button.command, button.value)}
+                    className={`min-w-8 rounded px-2 py-1 text-sm transition-colors ${
+                      button.className ?? ""
+                    } ${
+                      active[button.command]
+                        ? "bg-brand-blue/10 text-brand-blue"
+                        : "text-neutral-700 hover:bg-neutral-200"
+                    }`}
+                  >
+                    {button.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="relative">
           {isEmpty && placeholder ? (
@@ -238,7 +240,7 @@ export function RichTextEditor({
 
           <div
             ref={editorRef}
-            contentEditable
+            contentEditable={!readOnly}
             suppressContentEditableWarning
             role="textbox"
             aria-multiline="true"

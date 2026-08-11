@@ -464,7 +464,7 @@ function DocumentList({ application, reqCodes }: { application: any; reqCodes: s
               <ul className="ml-6 space-y-1">
                 {documents.map((doc: any) => (
                   <li key={doc.id}>
-                    <DocumentPreview url={doc.url} fileName={doc.fileName} />
+                    <DocumentPreview url={`/api/documents/${doc.id}`} fileName={doc.fileName} />
                   </li>
                 ))}
               </ul>
