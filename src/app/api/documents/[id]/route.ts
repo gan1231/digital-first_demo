@@ -52,16 +52,21 @@ export async function GET(
     return NextResponse.redirect(url);
   }
 
-  const bytes = await storage.read(document.storageKey);
+  try {
+    const bytes = await storage.read(document.storageKey);
 
-  return new NextResponse(new Uint8Array(bytes), {
-    headers: {
-      "Content-Type": document.mimeType,
-      "Content-Length": String(bytes.byteLength),
-      "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(document.fileName)}`,
-      "Cache-Control": "private, no-store",
-    },
-  });
+    return new NextResponse(bytes, {
+      headers: {
+        "Content-Type": document.mimeType,
+        "Content-Length": String(bytes.byteLength),
+        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(document.fileName)}`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    console.error("Баримт уншихад алдаа гарлаа:", error);
+    return new NextResponse("Файл олдсонгүй эсвэл устгагдсан байна.", { status: 404 });
+  }
 }
 
 export async function DELETE(
