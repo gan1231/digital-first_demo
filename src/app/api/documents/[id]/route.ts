@@ -55,7 +55,7 @@ export async function GET(
   try {
     const bytes = await storage.read(document.storageKey);
 
-    return new NextResponse(bytes, {
+    return new NextResponse(new Uint8Array(bytes), {
       headers: {
         "Content-Type": document.mimeType,
         "Content-Length": String(bytes.byteLength),
