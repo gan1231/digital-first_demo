@@ -87,7 +87,8 @@ export const majorSchema = programAnketSchema.extend({
   tuitionAmount: z.coerce
     .number()
     .int()
-    .min(0, "Сургалтын төлбөрийг оруулна уу."),
+    .min(0, "Сургалтын төлбөрийг оруулна уу.")
+    .max(2000000000, "Төлбөрийн хэмжээ хэт их байна."),
   universityGpa: z.coerce
     .number()
     .min(0, "Голч дүн 0-4.0 хооронд байна.")
