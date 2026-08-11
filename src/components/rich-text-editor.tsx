@@ -99,6 +99,7 @@ export function RichTextEditor({
   name: string;
   defaultValue: string;
   minWords: number;
+  maxWords: number;
   placeholder?: string;
   ariaLabel?: string;
   readOnly?: boolean;
