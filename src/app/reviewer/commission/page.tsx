@@ -4,7 +4,11 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SubmitButton } from "@/components/submit-button";
 import { SECTION_LABELS } from "@/lib/sections";
-import { createCommissionMember, removeCommissionMember } from "./actions";
+import {
+  createCommissionMember,
+  removeCommissionMember,
+  restoreCommissionMember,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Ажлын хэсэг" };
 
@@ -42,7 +46,14 @@ export default async function CommissionPage() {
                   {members.map((member) => (
                     <tr key={member.id} className="hover:bg-neutral-50">
                       <td className="whitespace-nowrap px-4 py-3">
-                        <div className="font-medium text-neutral-900">{member.name}</div>
+                        <div className="font-medium text-neutral-900">
+                          {member.name}
+                          {!member.isActive ? (
+                            <span className="ml-2 inline-flex items-center rounded-full bg-neutral-200 px-2 py-0.5 text-xs font-medium text-neutral-600">
+                              Идэвхгүй
+                            </span>
+                          ) : null}
+                        </div>
                         <div className="text-xs text-neutral-500">{member.email}</div>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-neutral-600">
@@ -77,15 +88,27 @@ export default async function CommissionPage() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-neutral-500">
                         {member.role === Role.REVIEWER ? (
-                          <form action={removeCommissionMember.bind(null, member.id)}>
-                            <button
-                              type="submit"
-                              className="text-red-600 hover:text-red-700"
-                              title="Эрх хасах"
-                            >
-                              Эрх хасах
-                            </button>
-                          </form>
+                          member.isActive ? (
+                            <form action={removeCommissionMember.bind(null, member.id)}>
+                              <button
+                                type="submit"
+                                className="text-red-600 hover:text-red-700"
+                                title="Эрхийг нь түр хаана. Өгсөн үнэлгээ нь хэвээр үлдэнэ."
+                              >
+                                Эрх хасах
+                              </button>
+                            </form>
+                          ) : (
+                            <form action={restoreCommissionMember.bind(null, member.id)}>
+                              <button
+                                type="submit"
+                                className="text-brand-blue hover:underline"
+                                title="Эрхийг нь буцаан нээнэ."
+                              >
+                                Эрх сэргээх
+                              </button>
+                            </form>
+                          )
                         ) : null}
                       </td>
                     </tr>

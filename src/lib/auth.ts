@@ -44,10 +44,26 @@ export async function createSession(userId: string): Promise<void> {
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: useSecureCookie(),
     path: "/",
     expires: expiresAt,
   });
+}
+
+/**
+ * `Secure` тэмдэгтэй cookie-г браузер зөвхөн HTTPS дээр хадгална. Сайт
+ * түр HTTP-ээр ажиллаж байгаа бол cookie хадгалагдахгүй тул хэрэглэгч
+ * нэвтэрч чадахгүй, эсхүл дараагийн үйлдэл дээр нэвтрэх хуудас руу
+ * буцаагдана. Тийм тохиолдолд `COOKIE_SECURE=false` гэж тохируулна.
+ *
+ * Хувийн мэдээлэл дамжуулдаг систем тул HTTPS-д шилжих нь зөв шийдэл —
+ * энэ тохиргоо бол зөвхөн түр арга.
+ */
+function useSecureCookie(): boolean {
+  const override = process.env.COOKIE_SECURE;
+  if (override === "true") return true;
+  if (override === "false") return false;
+  return process.env.NODE_ENV === "production";
 }
 
 export async function destroySession(): Promise<void> {
@@ -76,6 +92,12 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
 
   if (session.expiresAt < new Date()) {
     await prisma.session.delete({ where: { id: session.id } });
+    return null;
+  }
+
+  // Эрх нь хасагдсан хүний нээлттэй байсан session-ыг ч хүчингүй болгоно.
+  if (!session.user.isActive) {
+    await prisma.session.deleteMany({ where: { userId: session.userId } });
     return null;
   }
 

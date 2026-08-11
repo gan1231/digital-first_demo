@@ -7,11 +7,11 @@ async function main() {
   console.log('🌱 Өгөгдлийн санг эхний мэдээллээр дүүргэж байна (Seeding)...')
 
   // ==========================================
-  // 0. Админ хэрэглэгч үүсгэх
+  // 0. Админ хэрэглэгч үүсгэх npx tsx prisma/seed.tsnpx tsx prisma/seed.tsnpx tsx prisma/seed.ts
   // ==========================================
   const adminEmail = 'admin@dornogovi.gov.mn'
   const adminPassword = await bcrypt.hash('Admin@123!', 10)
-  
+
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {},

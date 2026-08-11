@@ -87,6 +87,10 @@ model User {
   jobTitle         String?
   role             Role            @default(APPLICANT)
   assignedSections ReviewSection[] @default([])
+  /// Ажлын хэсгээс хасагдсан гишүүнийг устгахгүй, эрхийг нь ч бууруулахгүй —
+  /// зөвхөн идэвхгүй болгоно. Ингэснээр өгсөн үнэлгээ, шийдвэрийн түүх бүтэн
+  /// үлдэж, тухайн хүн системд нэвтэрч чадахгүй болно.
+  isActive         Boolean         @default(true)
   emailVerifiedAt  DateTime?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt

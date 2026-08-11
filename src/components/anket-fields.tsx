@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   FORMATS,
   TARGET_GROUP_LABELS,
@@ -570,6 +570,17 @@ export function ProgramAnketFields({ defaults }: { defaults: AnketDefaults }) {
       : "Бусад"
     : "";
   const [selectValue, setSelectValue] = useState(initialSelectValue);
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  // Сервер алдаа буцаахад React формыг цэвэрлэдэг. Удирдлагатай `<select>`-ийн
+  // React дэх утга өөрчлөгддөггүй тул DOM-той зөрж, сонголт хоосон харагдана.
+  // Render бүрийн дараа зөрүүг нь буцаан тааруулна.
+  useEffect(() => {
+    const element = selectRef.current;
+    if (element && element.value !== selectValue) {
+      element.value = selectValue;
+    }
+  });
 
   return (
     <>
@@ -629,6 +640,7 @@ export function ProgramAnketFields({ defaults }: { defaults: AnketDefaults }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Тэргүүлэх болон эрэлттэй мэргэжил" htmlFor="claimedProfessionSelect" required>
             <select
+              ref={selectRef}
               id="claimedProfessionSelect"
               name={selectValue === "Бусад" ? "_ignored" : "claimedProfession"}
               required

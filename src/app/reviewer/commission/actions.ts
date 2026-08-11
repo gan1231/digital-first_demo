@@ -44,6 +44,12 @@ export async function createCommissionMember(formData: FormData) {
   revalidatePath("/reviewer/commission");
 }
 
+/**
+ * Гишүүнийг устгахгүй, эрхийг нь ч бууруулахгүй — идэвхгүй болгоно.
+ * Өгсөн үнэлгээ, шийдвэр нь `Evaluation`, `Decision`-д холбоотой хэвээр
+ * үлдэх ёстой тул устгах боломжгүй. Мөн APPLICANT болгож бууруулбал тэр хүн
+ * нэвтрэхэд өргөдөгчийн хуудас руу орж, анкет бөглөхийг шаардах болно.
+ */
 export async function removeCommissionMember(id: string) {
   await requireRole(Role.ADMIN);
 
@@ -52,10 +58,24 @@ export async function removeCommissionMember(id: string) {
     throw new Error("Хэрэглэгч олдсонгүй эсвэл эрх хасах боломжгүй байна.");
   }
 
-  await prisma.user.update({
-    where: { id },
-    data: { role: Role.APPLICANT },
-  });
+  await prisma.$transaction([
+    prisma.user.update({ where: { id }, data: { isActive: false } }),
+    // Нээлттэй байгаа session-ыг нь шууд хүчингүй болгоно.
+    prisma.session.deleteMany({ where: { userId: id } }),
+  ]);
+
+  revalidatePath("/reviewer/commission");
+}
+
+export async function restoreCommissionMember(id: string) {
+  await requireRole(Role.ADMIN);
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || user.role !== Role.REVIEWER) {
+    throw new Error("Хэрэглэгч олдсонгүй эсвэл эрх сэргээх боломжгүй байна.");
+  }
+
+  await prisma.user.update({ where: { id }, data: { isActive: true } });
 
   revalidatePath("/reviewer/commission");
 }
