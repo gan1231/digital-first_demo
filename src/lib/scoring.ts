@@ -105,8 +105,7 @@ export function computeTotal(
       // Гар аргаар өгсөн оноо
       criterionScore = Math.min(Math.max(s.score, 0), criterion.maxScore);
     } else if (s.status === "VERIFIED") {
-      // Автомат оноо (Эсвэл MAJOR_FIT бол шууд maxScore)
-      if (criterion.code === "MAJOR_FIT") {
+      if (criterion.autoSource === AutoScoreSource.NONE) {
         criterionScore = criterion.maxScore;
       } else {
         const suggested = suggestScore(criterion, application);
@@ -153,7 +152,7 @@ export function averageEvaluations(
         
         if (s.score !== undefined) return s.score;
         if (s.status === "VERIFIED") {
-          return criterion.code === "MAJOR_FIT" ? criterion.maxScore : (suggestScore(criterion, application) ?? 0);
+          return criterion.autoSource === AutoScoreSource.NONE ? criterion.maxScore : (suggestScore(criterion, application) ?? 0);
         }
         if (s.status === "REJECTED") return 0;
         return undefined;
