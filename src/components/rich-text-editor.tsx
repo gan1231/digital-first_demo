@@ -95,6 +95,7 @@ export function RichTextEditor({
   maxWords,
   placeholder,
   ariaLabel,
+  readOnly,
 }: {
   name: string;
   defaultValue: string;
