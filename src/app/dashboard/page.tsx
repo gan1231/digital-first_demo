@@ -12,7 +12,6 @@ import { formatCallDate, getActiveCalls, getCallTiming, trackLabels } from "@/li
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Alert, Card, StatusBadge, statusLabels } from "@/components/ui";
-import { resendVerificationEmail } from "./actions";
 
 export const metadata: Metadata = { title: "Миний өргөдөл" };
 export const dynamic = "force-dynamic";
@@ -46,23 +45,6 @@ export default async function DashboardPage({
           {submitted ? (
             <Alert tone="success" title="Өргөдөл амжилттай илгээгдлээ">
               Комиссын шийдвэрийг {user.email} хаягаар мэдэгдэнэ.
-            </Alert>
-          ) : null}
-
-          {!user.emailVerifiedAt ? (
-            <Alert tone="warning" title="И-мэйл хаяг баталгаажаагүй">
-              <p>
-                {user.email} хаяг руу баталгаажуулах холбоос илгээсэн. Хаяг
-                баталгаажаагүй бол өргөдөл илгээх боломжгүй.
-              </p>
-              <form action={resendVerificationEmail} className="mt-2">
-                <button
-                  type="submit"
-                  className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-900 transition-colors hover:bg-amber-100"
-                >
-                  Холбоосыг дахин илгээх
-                </button>
-              </form>
             </Alert>
           ) : null}
 

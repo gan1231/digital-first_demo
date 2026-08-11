@@ -301,7 +301,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Ажлын газар" value={application.guarantorWorkplace} className="sm:col-span-2" />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["GUARANTOR_REQ"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_1", "S_REQ_1"]} />
                 </div>
               </Card>
             )}
@@ -321,7 +321,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Зорилтот бүлэг" value={application.isTargetGroup ? application.targetGroupTypes.map(t => TARGET_GROUP_LABELS[t]).join(", ") + " (" + (application.targetGroupNote||"") + ")" : "Үгүй"} className="sm:col-span-2" />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["APP_FORM", "ID_CARD", "RESIDENCE_REF"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_2", "S_REQ_6", "S_REQ_2"]} />
                 </div>
               </Card>
             )}
@@ -343,7 +343,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Төгссөн сургууль" value={application.school} className="sm:col-span-2" />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["SCORE_PROOF", "EMONGOLIA_GPA", "GPA_PROOF"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_4", "G_REQ_5", "S_REQ_4"]} />
                 </div>
               </Card>
             )}
@@ -359,7 +359,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Сургалтын төлбөр" value={application.tuitionAmount ? `${application.tuitionAmount.toLocaleString("mn-MN")} ₮` : null} />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["ADMISSION_PROOF", "ENROLLMENT_PROOF", "CONDUCT_PROOF"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_3", "S_REQ_3", "S_REQ_5"]} />
                 </div>
               </Card>
             )}
@@ -385,7 +385,7 @@ export default async function ApplicationReviewPage({
             {activeSection === ReviewSection.SOCIAL && (
               <Card title="Нийгмийн оролцоо манлайллын үзүүлэлт">
                 <div className="pt-2">
-                  <DocumentList application={application} reqCodes={["ACHIEVEMENTS"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_6", "S_REQ_7"]} />
                 </div>
               </Card>
             )}
