@@ -1,9 +1,29 @@
-import { PrismaClient, CallTrack, AutoScoreSource } from '@prisma/client'
+import { PrismaClient, CallTrack, AutoScoreSource, Role } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Өгөгдлийн санг эхний мэдээллээр дүүргэж байна (Seeding)...')
+
+  // ==========================================
+  // 0. Админ хэрэглэгч үүсгэх
+  // ==========================================
+  const adminEmail = 'admin@dornogovi.gov.mn'
+  const adminPassword = await bcrypt.hash('Admin@123!', 10)
+  
+  const admin = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
+      email: adminEmail,
+      passwordHash: adminPassword,
+      name: 'Системийн админ',
+      role: Role.ADMIN,
+      emailVerifiedAt: new Date(),
+    }
+  })
+  console.log(`✅ Админ үүсгэсэн: ${admin.email} (Нууц үг: Admin@123!)`)
 
   // Одоогийн он
   const currentYear = new Date().getFullYear()
