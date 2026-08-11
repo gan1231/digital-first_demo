@@ -46,11 +46,8 @@ export async function GET(
     meta: { applicationId: document.application.id },
   });
 
-  // MinIO дээр байвал сервер дундуур явуулахгүй — түр хугацааны шууд холбоос өгнө.
-  if (storage.presignGet) {
-    const url = await storage.presignGet(document.storageKey, document.fileName);
-    return NextResponse.redirect(url);
-  }
+  // MinIO-с шууд татах (presign) үед S3_PUBLIC_ENDPOINT буруу байвал 404 өгдөг тул 
+  // найдвартай ажиллахын тулд үргэлж сервер дундуур (proxy) дамжуулж харуулна.
 
   try {
     const bytes = await storage.read(document.storageKey);
