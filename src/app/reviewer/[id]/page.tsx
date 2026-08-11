@@ -141,13 +141,13 @@ export default async function ApplicationReviewPage({
       isStatusOnly: true,
     };
   } else if (activeSection === ReviewSection.ACADEMIC) {
-    activeCriteriaCodes = ["EXAM_SCORE", "GPA", "UNIVERSITY_GPA"];
+    activeCriteriaCodes = ["EXAM_SCORE", "GPA", "UNIVERSITY_GPA", "G_CRIT_2", "G_CRIT_3", "S_CRIT_2"];
   } else if (activeSection === ReviewSection.SCHOOL) {
-    activeCriteriaCodes = ["MAJOR_FIT"];
+    activeCriteriaCodes = ["MAJOR_FIT", "G_CRIT_1", "S_CRIT_1"];
   } else if (activeSection === ReviewSection.ESSAY) {
-    activeCriteriaCodes = ["ESSAY"];
+    activeCriteriaCodes = ["ESSAY", "G_CRIT_5", "S_CRIT_4"];
   } else if (activeSection === ReviewSection.SOCIAL) {
-    activeCriteriaCodes = ["SOCIAL"];
+    activeCriteriaCodes = ["SOCIAL", "G_CRIT_4", "S_CRIT_3"];
   }
 
   const activeCriteriaViews: CriterionView[] = [];
@@ -167,7 +167,7 @@ export default async function ApplicationReviewPage({
           score: myScores[dbCriterion.code]?.score ?? null,
           status: myScores[dbCriterion.code]?.status,
           comment: myScores[dbCriterion.code]?.comment ?? "",
-          isStatusOnly: code !== "ESSAY" && code !== "SOCIAL",
+          isStatusOnly: ["ESSAY", "G_CRIT_5", "S_CRIT_4", "SOCIAL", "G_CRIT_4", "S_CRIT_3"].includes(code) ? false : true,
         });
       }
     }
@@ -461,9 +461,15 @@ function DocumentList({ application, reqCodes }: { application: any; reqCodes: s
               </span>
             </div>
             {documents.length > 0 && (
-              <ul className="ml-6 space-y-1">
+              <ul className="ml-6 space-y-3 mt-2">
                 {documents.map((doc: any) => (
-                  <li key={doc.id}>
+                  <li key={doc.id} className={doc.eventName ? "rounded-lg border border-neutral-200 p-3 bg-neutral-50/50" : ""}>
+                    {doc.eventName && (
+                      <div className="mb-2">
+                        <div className="text-sm font-semibold text-neutral-800">{doc.eventName}</div>
+                        {doc.note && <div className="text-xs text-neutral-500 mt-0.5">{doc.note}</div>}
+                      </div>
+                    )}
                     <DocumentPreview url={`/api/documents/${doc.id}`} fileName={doc.fileName} />
                   </li>
                 ))}
