@@ -87,7 +87,13 @@ export async function saveEvaluation(
   }
 
   const criteria = application.call.criteria;
-  const { scores: newScores, error } = readScores(formData, criteria);
+  const allCriteria = [
+    ...criteria,
+    { code: "GUARANTOR_VERIFY", label: "Батлан даагчийн мэдээлэл", maxScore: 0 },
+    { code: "APP_INFO_VERIFY", label: "Анкетны мэдээлэл", maxScore: 0 },
+  ] as ScoringCriterion[];
+
+  const { scores: newScores, error } = readScores(formData, allCriteria);
   if (error) return { error };
 
   const existingEvaluation = await prisma.evaluation.findUnique({
@@ -100,8 +106,12 @@ export async function saveEvaluation(
 
   // Баталгаажуулахын өмнө тайлбар шаардана — оноо яагаад тэгсэн нь мөрдөгдөх ёстой.
   if (isFinal) {
-    const missing = criteria.find(
-      (criterion) => scores[criterion.code]?.comment.length < 3,
+    const missing = allCriteria.find(
+      (criterion) => {
+        // We only require a comment if this criterion was actually submitted in the form
+        // (i.e. we have it in scores and its comment is too short)
+        return scores[criterion.code] !== undefined && scores[criterion.code].comment.length < 3;
+      }
     );
     if (missing) {
       return { error: `«${missing.label}» шалгуурт тайлбар бичнэ үү.` };
