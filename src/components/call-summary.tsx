@@ -19,6 +19,10 @@ export function CallSummary({
     (requirement) => !GENERATED_CODES.includes(requirement.code),
   );
   
+  const visibleCriteria = call.criteria.filter(
+    (criterion) => criterion.label !== "Эссэний үнэлгээ"
+  );
+  
   const targetDeadline = new Date("2026-08-20T23:59:00+08:00");
   const hasClosed = new Date() > targetDeadline;
 
@@ -88,10 +92,10 @@ export function CallSummary({
 
       <div className="mt-4">
         <h4 className="text-sm font-medium text-neutral-900">
-          Шалгуур үзүүлэлт — нийт {call.criteria.reduce((sum, c) => sum + c.maxScore, 0)} оноо
+          Шалгуур үзүүлэлт — нийт {visibleCriteria.reduce((sum, c) => sum + c.maxScore, 0)} оноо
         </h4>
         <ul className="mt-2 space-y-1">
-          {call.criteria.map((criterion) => (
+          {visibleCriteria.map((criterion) => (
             <li
               key={criterion.id}
               className="flex items-start justify-between gap-3 border-b border-neutral-100 pb-1 text-[13px] leading-snug last:border-0"
