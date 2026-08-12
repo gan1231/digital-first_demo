@@ -27,16 +27,8 @@ export async function SiteHeader() {
           <Link href="/" className="flex items-center gap-3">
             <span className="flex items-center gap-2">
               <Image
-                src={org.logo}
-                alt={org.name}
-                width={44}
-                height={44}
-                priority
-                className="size-11"
-              />
-              <Image
-                src={department.logo}
-                alt={department.name}
+                src="/dornogovi-logo.png"
+                alt="ДОРНОГОВЬ АЙМГИЙН ЗАСАГ ДАРГЫН ТАМГЫН ГАЗАР"
                 width={44}
                 height={44}
                 priority
@@ -44,11 +36,8 @@ export async function SiteHeader() {
               />
             </span>
             <span className="leading-tight">
-              <span className="block text-[15px] font-medium text-neutral-900">
-                {fund.name}
-              </span>
-              <span className="block text-xs text-neutral-500">
-                {department.shortName}
+              <span className="block text-[15px] font-medium text-neutral-900 uppercase">
+                ДОРНОГОВЬ АЙМГИЙН ЗАСАГ ДАРГЫН ТАМГЫН ГАЗАР
               </span>
             </span>
           </Link>
