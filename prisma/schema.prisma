@@ -96,7 +96,7 @@ model User {
   updatedAt        DateTime        @updatedAt
 
   applications Application[]
-  evaluations  Evaluation[]
+  evaluations  CriterionEvaluation[]
   decisions    Decision[]          @relation("DecidedBy")
   auditLogs    AuditLog[]
   sessions     Session[]
@@ -309,7 +309,7 @@ model Application {
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   call        ScholarshipCall @relation(fields: [callId], references: [id])
   documents   Document[]
-  evaluations Evaluation[]
+  evaluations CriterionEvaluation[]
   decision    Decision?
   emailLogs   EmailLog[]
 
@@ -337,23 +337,25 @@ model Document {
   @@index([applicationId])
 }
 
-model Evaluation {
-  id            String   @id @default(cuid())
-  applicationId String
-  reviewerId    String
-  /// { [criterionCode]: { score: number, comment: string } }
-  scores        Json
-  total         Float
-  comment       String?
-  /// Баталгаажуулаагүй үнэлгээ (ноорог) эцсийн жагсаалтад тооцогдохгүй.
-  submittedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model CriterionEvaluation {
+  id              String   @id @default(cuid())
+  applicationId   String
+  criterionCode   String
+  reviewerId      String
+  
+  score           Float?
+  status          String?  // "VERIFIED" | "REJECTED"
+  comment         String
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   reviewer    User        @relation(fields: [reviewerId], references: [id])
 
-  @@unique([applicationId, reviewerId])
+  // Нэг өргөдөл, нэг шалгуур дээр зөвхөн нэг үнэлгээ байна
+  @@unique([applicationId, criterionCode])
+  @@index([applicationId])
 }
 
 model Decision {

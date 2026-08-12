@@ -8,7 +8,7 @@ import { GENERATED_CODES } from "@/lib/application-shared";
 import { essayToHtml } from "@/lib/essay";
 import { trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
-import { averageEvaluations, parseScores, suggestScore } from "@/lib/scoring";
+import { calculateTotalScore, suggestScore } from "@/lib/scoring";
 import { Alert, Card, StatusBadge, essayProseClass } from "@/components/ui";
 import { DocumentPreview } from "@/components/ui/document-preview";
 import { saveEvaluation } from "../actions";
@@ -60,12 +60,7 @@ export default async function ApplicationReviewPage({
     targetId: application.id,
   });
 
-  const myEvaluation = application.evaluations.find(
-    (evaluation) => evaluation.reviewerId === user.id,
-  );
-  const myScores = parseScores(myEvaluation?.scores);
-
-  const { average, reviewerCount } = averageEvaluations(
+  const { average } = calculateTotalScore(
     application.evaluations,
     application.call.criteria,
     application,
@@ -73,15 +68,15 @@ export default async function ApplicationReviewPage({
 
   const allApplications = await prisma.application.findMany({
     where: { callId: application.callId, status: { not: "DRAFT" } },
-    select: { id: true, evaluations: { select: { reviewerId: true, submittedAt: true } } },
-    orderBy: { submittedAt: "asc" }
+    select: { id: true, evaluations: { select: { reviewerId: true, createdAt: true } } },
+    orderBy: { createdAt: "asc" }
   });
 
   const totalCount = allApplications.length;
   let evaluatedCount = 0;
   
   const ids = allApplications.map(a => {
-    const isEvaluated = a.evaluations.some(e => e.reviewerId === user.id && e.submittedAt);
+    const isEvaluated = a.evaluations.some(e => e.reviewerId === user.id);
     if (isEvaluated) evaluatedCount++;
     return a.id;
   });
@@ -116,6 +111,7 @@ export default async function ApplicationReviewPage({
 
   if (activeSection === ReviewSection.GUARANTOR) {
     activeCriteriaCodes = ["GUARANTOR_VERIFY"];
+    const ev = application.evaluations.find(e => e.criterionCode === "GUARANTOR_VERIFY");
     fakeCriteriaMap["GUARANTOR_VERIFY"] = {
       code: "GUARANTOR_VERIFY",
       label: "Батлан даагчийн мэдээлэл",
@@ -123,12 +119,15 @@ export default async function ApplicationReviewPage({
       maxScore: 0,
       suggested: null,
       score: null,
-      status: myScores["GUARANTOR_VERIFY"]?.status,
-      comment: myScores["GUARANTOR_VERIFY"]?.comment ?? "",
+      status: (ev?.status as any) ?? undefined,
+      comment: ev?.comment ?? "",
       isStatusOnly: true,
+      verifiedBy: ev ? ev.reviewer.name : undefined,
+      verifiedAt: ev ? ev.createdAt.toLocaleString("mn-MN") : undefined,
     };
   } else if (activeSection === ReviewSection.APPLICATION_INFO) {
     activeCriteriaCodes = ["APP_INFO_VERIFY"];
+    const ev = application.evaluations.find(e => e.criterionCode === "APP_INFO_VERIFY");
     fakeCriteriaMap["APP_INFO_VERIFY"] = {
       code: "APP_INFO_VERIFY",
       label: "Анкетны мэдээлэл",
@@ -136,9 +135,11 @@ export default async function ApplicationReviewPage({
       maxScore: 0,
       suggested: null,
       score: null,
-      status: myScores["APP_INFO_VERIFY"]?.status,
-      comment: myScores["APP_INFO_VERIFY"]?.comment ?? "",
+      status: (ev?.status as any) ?? undefined,
+      comment: ev?.comment ?? "",
       isStatusOnly: true,
+      verifiedBy: ev ? ev.reviewer.name : undefined,
+      verifiedAt: ev ? ev.createdAt.toLocaleString("mn-MN") : undefined,
     };
   } else if (activeSection === ReviewSection.ACADEMIC) {
     activeCriteriaCodes = ["EXAM_SCORE", "GPA", "UNIVERSITY_GPA", "G_CRIT_2", "G_CRIT_3", "S_CRIT_2"];
@@ -158,16 +159,19 @@ export default async function ApplicationReviewPage({
     } else {
       const dbCriterion = application.call.criteria.find((c) => c.code === code);
       if (dbCriterion) {
+        const ev = application.evaluations.find(e => e.criterionCode === code);
         activeCriteriaViews.push({
           code: dbCriterion.code,
           label: dbCriterion.label,
           description: dbCriterion.description,
           maxScore: dbCriterion.maxScore,
           suggested: suggestScore(dbCriterion, application),
-          score: myScores[dbCriterion.code]?.score ?? null,
-          status: myScores[dbCriterion.code]?.status,
-          comment: myScores[dbCriterion.code]?.comment ?? "",
+          score: ev?.score ?? null,
+          status: (ev?.status as any) ?? undefined,
+          comment: ev?.comment ?? "",
           isStatusOnly: ["ESSAY", "G_CRIT_5", "S_CRIT_4", "SOCIAL", "G_CRIT_4", "S_CRIT_3"].includes(code) ? false : true,
+          verifiedBy: ev ? ev.reviewer.name : undefined,
+          verifiedAt: ev ? ev.createdAt.toLocaleString("mn-MN") : undefined,
         });
       }
     }
@@ -218,14 +222,23 @@ export default async function ApplicationReviewPage({
             </h2>
             <div className="space-y-3">
               {application.evaluations.length > 0 ? (
-                application.evaluations.map(ev => (
-                  <div key={ev.reviewerId} className="text-sm">
-                    <div className="font-medium text-neutral-900">{ev.reviewer.name}</div>
-                    <div className="text-xs text-neutral-500">
-                      Нийт оноо: {ev.total ?? "—"}
+                (() => {
+                  const grouped: Record<string, { name: string, count: number }> = {};
+                  application.evaluations.forEach(ev => {
+                    if (!grouped[ev.reviewerId]) {
+                      grouped[ev.reviewerId] = { name: ev.reviewer.name, count: 0 };
+                    }
+                    grouped[ev.reviewerId].count++;
+                  });
+                  return Object.values(grouped).map((g, i) => (
+                    <div key={i} className="text-sm">
+                      <div className="font-medium text-neutral-900">{g.name}</div>
+                      <div className="text-xs text-neutral-500">
+                        {g.count} шалгуур баталгаажуулсан
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ));
+                })()
               ) : (
                 <div className="text-sm text-neutral-500">Үнэлгээ хийгдээгүй</div>
               )}
@@ -399,7 +412,6 @@ export default async function ApplicationReviewPage({
               <ScoringForm
                 action={saveEvaluation.bind(null, application.id)}
                 criteria={activeCriteriaViews}
-                submittedAt={myEvaluation?.submittedAt?.toLocaleString("mn-MN") ?? null}
               />
             </Card>
           </div>

@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { GENERATED_CODES } from "@/lib/application-shared";
 import { getActiveCalls, trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
-import { averageEvaluations } from "@/lib/scoring";
+import { calculateTotalScore } from "@/lib/scoring";
 import { SOUMS } from "@/lib/soum";
 import { Alert, StatusBadge, inputClass, statusLabels } from "@/components/ui";
 
@@ -59,12 +59,7 @@ export default async function ReviewerListPage({
     include: {
       documents: { select: { requirementCode: true } },
       evaluations: {
-        select: {
-          total: true,
-          scores: true,
-          submittedAt: true,
-          reviewerId: true,
-        },
+        select: { criterionCode: true, score: true, status: true, reviewerId: true },
       },
     },
     orderBy: { submittedAt: "asc" },
@@ -75,11 +70,14 @@ export default async function ReviewerListPage({
   const rows = applications
     .map((application) => {
       const call = calls.find((item) => item.id === application.callId)!;
-      const { average, reviewerCount } = averageEvaluations(
+      const { average } = calculateTotalScore(
         application.evaluations,
         call.criteria,
         application,
       );
+      
+      const reviewerCount = new Set(application.evaluations.map(e => e.reviewerId)).size;
+      
       const mine = application.evaluations.find(
         (evaluation) => evaluation.reviewerId === user.id,
       );
@@ -92,12 +90,12 @@ export default async function ReviewerListPage({
       );
 
       return {
-        application,
+        ...application,
         call,
         average,
         reviewerCount,
-        myTotal: mine?.total ?? null,
-        mySubmitted: Boolean(mine?.submittedAt),
+        myTotal: null,
+        mySubmitted: Boolean(mine),
         uploadedCount: required.filter((requirement) =>
           uploaded.has(requirement.code),
         ).length,
@@ -201,31 +199,33 @@ export default async function ReviewerListPage({
             <tbody>
               {rows.map((row) => (
                 <tr
-                  key={row.application.id}
+                  key={row.id}
                   className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
                 >
                   <td className="px-3 py-2">
-                    <Link
-                      href={`/reviewer/${row.application.id}`}
-                      className="text-brand-blue hover:underline"
-                    >
-                      {row.application.lastName} {row.application.firstName}
-                    </Link>
-                    <span className="block text-xs text-neutral-500">
-                      {row.application.registerNo}
-                    </span>
+                    <div className="font-medium text-neutral-900">
+                      <Link
+                        href={`/reviewer/${row.id}`}
+                        className="hover:underline"
+                      >
+                        {row.lastName} {row.firstName}
+                      </Link>
+                    </div>
+                    <div className="text-xs text-neutral-500">
+                      {row.registerNo}
+                    </div>
                   </td>
                   <td className="px-3 py-2 text-xs text-neutral-600">
                     {trackLabels[row.call.track]}
                   </td>
-                  <td className="px-3 py-2">{row.application.soum ?? "—"}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2">
-                    {row.application.major ?? "—"}
+                  <td className="px-3 py-2">{row.soum ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.major ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">
-                    {row.call.track === CallTrack.STUDENT
-                      ? (row.application.universityGpa?.toFixed(2) ?? "—")
-                      : (row.application.examScore ?? "—")}
+                    {row.call.track === "STUDENT"
+                      ? (row.universityGpa?.toFixed(2) ?? "—")
+                      : (row.examScore ?? "—")}
                   </td>
                   <td className="px-3 py-2 text-center">
                     <span
@@ -261,11 +261,11 @@ export default async function ReviewerListPage({
                     ) : null}
                   </td>
                   <td className="px-3 py-2">
-                    <StatusBadge status={row.application.status} />
+                    <StatusBadge status={row.status} />
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-3 py-2 text-right">
                     <Link
-                      href={`/reviewer/${row.application.id}`}
+                      href={`/reviewer/${row.id}`}
                       className="inline-flex items-center justify-center rounded-lg bg-brand-blue px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-blue-dark"
                     >
                       Үнэлэх

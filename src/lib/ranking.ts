@@ -2,7 +2,7 @@ import "server-only";
 import { ApplicationStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getActiveCalls, type ActiveCall } from "@/lib/call";
-import { averageEvaluations, scoreSpread } from "@/lib/scoring";
+import { calculateTotalScore, scoreSpread } from "@/lib/scoring";
 
 export type RankedRow = {
   rank: number;
@@ -48,12 +48,12 @@ async function rankCall(call: ActiveCall): Promise<CallRanking> {
     where: { callId: call.id, status: { not: ApplicationStatus.DRAFT } },
     include: {
       decision: true,
-      evaluations: { select: { total: true, scores: true, submittedAt: true } },
+      evaluations: { select: { criterionCode: true, score: true, status: true, reviewerId: true } },
     },
   });
 
   const scored = applications.map((application) => {
-    const { average, reviewerCount, perCriterion } = averageEvaluations(
+    const { average, perCriterion } = calculateTotalScore(
       application.evaluations,
       call.criteria,
       application,
@@ -73,8 +73,8 @@ async function rankCall(call: ActiveCall): Promise<CallRanking> {
       isTargetGroup: application.isTargetGroup,
       average,
       perCriterion,
-      reviewerCount,
-      spread: scoreSpread(application.evaluations),
+      reviewerCount: new Set(application.evaluations.map(e => e.reviewerId)).size,
+      spread: scoreSpread(),
       decision: application.decision?.result ?? null,
       status: application.status,
     };

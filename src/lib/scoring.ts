@@ -1,38 +1,12 @@
 import {
   AutoScoreSource,
   type Application,
-  type Evaluation,
+  type CriterionEvaluation,
   type ScoringCriterion,
 } from "@prisma/client";
-import { z } from "zod";
-
-/** Нэг шалгуурын оноо ба комиссын тайлбар. */
-export type CriterionScore = {
-  score?: number;
-  status?: "VERIFIED" | "REJECTED";
-  comment: string;
-};
-
-export type ScoreMap = Record<string, CriterionScore>;
-
-export const scoreMapSchema = z.record(
-  z.string(),
-  z.object({
-    score: z.number().min(0).optional(),
-    status: z.enum(["VERIFIED", "REJECTED"]).optional(),
-    comment: z.string(),
-  }),
-);
-
-/** DB-гээс ирсэн Json-г найдвартай хэлбэрт оруулна. */
-export function parseScores(value: unknown): ScoreMap {
-  const parsed = scoreMapSchema.safeParse(value);
-  return parsed.success ? parsed.data : {};
-}
 
 /**
  * Анкетын тоон утгаас автомат оноо санал болгоно.
- * Комисс баримттай тулгаж үзээд баталгаажуулна.
  */
 export function suggestScore(
   criterion: Pick<
@@ -86,102 +60,60 @@ export function suggestScore(
 }
 
 /** 
- * Нэг үнэлгээчийн нийт оноог бодох. 
- * Хэрвээ status = VERIFIED байвал suggestScore-г (эсвэл maxScore-г MAJOR_FIT үед) нэмнэ.
- * REJECTED байвал 0 оноо өгнө.
+ * Нэг шалгуурын эцсийн оноог бодох.
  */
-export function computeTotal(
-  scores: ScoreMap,
-  criteria: Pick<ScoringCriterion, "code" | "maxScore" | "autoSource" | "autoInputMax">[],
+export function computeCriterionScore(
+  evalRecord: Pick<CriterionEvaluation, "score" | "status">,
+  criterion: Pick<ScoringCriterion, "code" | "maxScore" | "autoSource" | "autoInputMax">,
   application: Pick<Application, "examScore" | "gpa" | "universityGpa">,
 ): number {
-  const total = criteria.reduce((sum, criterion) => {
-    const s = scores[criterion.code];
-    if (!s) return sum;
-
-    let criterionScore = 0;
-    
-    if (s.score !== undefined) {
-      // Гар аргаар өгсөн оноо
-      criterionScore = Math.min(Math.max(s.score, 0), criterion.maxScore);
-    } else if (s.status === "VERIFIED") {
-      if (criterion.autoSource === AutoScoreSource.NONE) {
-        criterionScore = criterion.maxScore;
-      } else {
-        const suggested = suggestScore(criterion, application);
-        criterionScore = suggested ?? 0;
-      }
-    } else if (s.status === "REJECTED") {
-      criterionScore = 0;
+  if (evalRecord.score !== null) {
+    return Math.min(Math.max(evalRecord.score, 0), criterion.maxScore);
+  } else if (evalRecord.status === "VERIFIED") {
+    if (criterion.autoSource === AutoScoreSource.NONE) {
+      return criterion.maxScore;
+    } else {
+      const suggested = suggestScore(criterion, application);
+      return suggested ?? 0;
     }
-
-    return sum + criterionScore;
-  }, 0);
-
-  return Math.round(total * 10) / 10;
+  }
+  return 0;
 }
 
-type SubmittedEvaluation = Pick<Evaluation, "total" | "scores" | "submittedAt">;
-
-/** Баталгаажсан үнэлгээнүүдийн дундаж. Ноорог үнэлгээ тооцогдохгүй. */
-export function averageEvaluations(
-  evaluations: SubmittedEvaluation[],
+/** Нийт баталгаажсан үнэлгээнүүдээс эцсийн оноог бодох. */
+export function calculateTotalScore(
+  evaluations: Pick<CriterionEvaluation, "criterionCode" | "score" | "status">[],
   criteria: Pick<ScoringCriterion, "code" | "maxScore" | "autoSource" | "autoInputMax">[],
   application: Pick<Application, "examScore" | "gpa" | "universityGpa">,
 ): {
-  average: number | null;
-  reviewerCount: number;
+  average: number | null; // Null if no criteria evaluated
   perCriterion: Record<string, number>;
 } {
-  const submitted = evaluations.filter(
-    (evaluation) => evaluation.submittedAt !== null,
-  );
-
-  if (submitted.length === 0) {
-    return { average: null, reviewerCount: 0, perCriterion: {} };
+  if (evaluations.length === 0) {
+    return { average: null, perCriterion: {} };
   }
 
   const perCriterion: Record<string, number> = {};
-  let totalAverage = 0;
+  let totalScore = 0;
 
   for (const criterion of criteria) {
-    const values = submitted
-      .map((evaluation) => {
-        const s = parseScores(evaluation.scores)[criterion.code];
-        if (!s) return undefined;
-        
-        if (s.score !== undefined) return s.score;
-        if (s.status === "VERIFIED") {
-          return criterion.autoSource === AutoScoreSource.NONE ? criterion.maxScore : (suggestScore(criterion, application) ?? 0);
-        }
-        if (s.status === "REJECTED") return 0;
-        return undefined;
-      })
-      .filter((val): val is number => val !== undefined);
-
-    if (values.length > 0) {
-      const avg = values.reduce((a, b) => a + b, 0) / values.length;
-      perCriterion[criterion.code] = Math.round(avg * 10) / 10;
-      totalAverage += avg;
+    const evalRecord = evaluations.find(e => e.criterionCode === criterion.code);
+    if (evalRecord) {
+      const score = computeCriterionScore(evalRecord, criterion, application);
+      perCriterion[criterion.code] = score;
+      totalScore += score;
     } else {
       perCriterion[criterion.code] = 0;
     }
   }
 
   return {
-    average: Math.round(totalAverage * 10) / 10,
-    reviewerCount: submitted.length,
+    average: Math.round(totalScore * 10) / 10,
     perCriterion,
   };
 }
 
-/** Онооны зөрүү — комиссын гишүүдийн үнэлгээ хэр нийцэж байгааг харуулна. */
-export function scoreSpread(evaluations: SubmittedEvaluation[]): number | null {
-  const totals = evaluations
-    .filter((evaluation) => evaluation.submittedAt !== null)
-    .map((evaluation) => evaluation.total);
-
-  if (totals.length < 2) return null;
-
-  return Math.round((Math.max(...totals) - Math.min(...totals)) * 10) / 10;
+/** Онооны зөрүү - Одоо нэг л хүн шалгах тул зөрүү байхгүй. */
+export function scoreSpread(): number | null {
+  return null;
 }

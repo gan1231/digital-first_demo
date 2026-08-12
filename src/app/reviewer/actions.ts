@@ -11,58 +11,61 @@ import { z } from "zod";
 import { requireRole, writeAudit } from "@/lib/auth";
 import { sendEmail, type EmailTemplate } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
-import { computeTotal, type ScoreMap } from "@/lib/scoring";
+
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
 function readScores(
   formData: FormData,
   criteria: ScoringCriterion[],
-): { scores: ScoreMap; error?: string } {
-  const scores: ScoreMap = {};
-
+): { parsed: { criterionCode: string; score: number | null; status: "VERIFIED" | "REJECTED" | null; comment: string }[]; error?: string } {
+  const parsed = [];
   for (const criterion of criteria) {
     const commentKey = `comment__${criterion.code}`;
-    if (!formData.has(commentKey)) {
-      continue;
-    }
+    if (!formData.has(commentKey)) continue;
 
     const rawComment = formData.get(commentKey);
     const rawScore = formData.get(`score__${criterion.code}`);
     const rawStatus = formData.get(`status__${criterion.code}`);
 
-    let scoreValue: number | undefined = undefined;
-    let statusValue: "VERIFIED" | "REJECTED" | undefined = undefined;
+    let scoreValue: number | null = null;
+    let statusValue: "VERIFIED" | "REJECTED" | null = null;
 
     if (rawScore !== null) {
       const value = Number(rawScore);
       if (rawScore === "" || Number.isNaN(value)) {
-        return { scores, error: `«${criterion.label}» оноог оруулна уу.` };
+        return { error: `«${criterion.label}» оноог оруулна уу.`, parsed: [] };
       }
       if (value < 0 || value > criterion.maxScore) {
         return {
-          scores,
           error: `«${criterion.label}» оноо 0-${criterion.maxScore} хооронд байна.`,
+          parsed: [],
         };
       }
       scoreValue = Math.round(value * 10) / 10;
     } else if (rawStatus !== null) {
       if (rawStatus !== "VERIFIED" && rawStatus !== "REJECTED") {
-        return { scores, error: `«${criterion.label}» төлөвийг зөв сонгоно уу.` };
+        return { error: `«${criterion.label}» төлөвийг зөв сонгоно уу.`, parsed: [] };
       }
       statusValue = rawStatus;
     } else {
-      return { scores, error: `«${criterion.label}» үнэлгээ байхгүй байна.` };
+      return { error: `«${criterion.label}» үнэлгээ байхгүй байна.`, parsed: [] };
     }
 
-    scores[criterion.code] = {
+    const comment = String(rawComment ?? "").trim();
+    if (comment.length < 3) {
+      return { error: `«${criterion.label}» шалгуурт тайлбар бичнэ үү.`, parsed: [] };
+    }
+
+    parsed.push({
+      criterionCode: criterion.code,
       score: scoreValue,
       status: statusValue,
-      comment: String(rawComment ?? "").trim(),
-    };
+      comment,
+    });
   }
 
-  return { scores };
+  return { parsed };
 }
 
 export async function saveEvaluation(
@@ -71,7 +74,6 @@ export async function saveEvaluation(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireRole(Role.REVIEWER, Role.ADMIN);
-  const isFinal = formData.get("intent") === "submit";
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
@@ -93,51 +95,37 @@ export async function saveEvaluation(
     { code: "APP_INFO_VERIFY", label: "Анкетны мэдээлэл", maxScore: 0 },
   ] as ScoringCriterion[];
 
-  const { scores: newScores, error } = readScores(formData, allCriteria);
+  const { parsed, error } = readScores(formData, allCriteria);
   if (error) return { error };
+  if (!parsed || parsed.length === 0) return { error: "Хадгалах үнэлгээ олдсонгүй." };
 
-  const existingEvaluation = await prisma.evaluation.findUnique({
-    where: { applicationId_reviewerId: { applicationId, reviewerId: user.id } },
-  });
-  
-  // Merge scores with existing ones so that inactive sections are not lost
-  const existingScores = existingEvaluation ? (existingEvaluation.scores as Record<string, any>) : {};
-  const scores = { ...existingScores, ...newScores };
+  for (const item of parsed) {
+    const existing = await prisma.criterionEvaluation.findUnique({
+      where: { applicationId_criterionCode: { applicationId, criterionCode: item.criterionCode } }
+    });
 
-  // Баталгаажуулахын өмнө тайлбар шаардана — оноо яагаад тэгсэн нь мөрдөгдөх ёстой.
-  if (isFinal) {
-    const missing = allCriteria.find(
-      (criterion) => {
-        // We only require a comment if this criterion was actually submitted in the form
-        // (i.e. we have it in scores and its comment is too short)
-        return scores[criterion.code] !== undefined && scores[criterion.code].comment.length < 3;
-      }
-    );
-    if (missing) {
-      return { error: `«${missing.label}» шалгуурт тайлбар бичнэ үү.` };
+    if (existing && existing.reviewerId !== user.id) {
+      return { error: "Шалгуурыг өөр шалгагч баталгаажуулсан байна." };
     }
   }
 
-  const total = computeTotal(scores, criteria, application);
-  const comment = String(formData.get("comment") ?? "").trim() || null;
-  const submittedAt = isFinal ? new Date() : null;
+  await prisma.$transaction(
+    parsed.map((item) =>
+      prisma.criterionEvaluation.upsert({
+        where: { applicationId_criterionCode: { applicationId, criterionCode: item.criterionCode } },
+        update: { score: item.score, status: item.status, comment: item.comment, reviewerId: user.id },
+        create: {
+          applicationId,
+          criterionCode: item.criterionCode,
+          reviewerId: user.id,
+          score: item.score,
+          status: item.status,
+          comment: item.comment,
+        },
+      })
+    )
+  );
 
-  await prisma.evaluation.upsert({
-    where: {
-      applicationId_reviewerId: { applicationId, reviewerId: user.id },
-    },
-    update: { scores, total, comment, submittedAt },
-    create: {
-      applicationId,
-      reviewerId: user.id,
-      scores,
-      total,
-      comment,
-      submittedAt,
-    },
-  });
-
-  // Эхний үнэлгээ ормогц өргөдөл «хянагдаж буй» төлөвт шилжинэ.
   if (application.status === ApplicationStatus.SUBMITTED) {
     await prisma.application.update({
       where: { id: applicationId },
@@ -147,21 +135,17 @@ export async function saveEvaluation(
 
   await writeAudit({
     actorId: user.id,
-    action: isFinal ? "evaluation.submit" : "evaluation.save",
+    action: "evaluation.submit",
     targetType: "Application",
     targetId: applicationId,
-    meta: { total },
+    meta: { codes: parsed.map(p => p.criterionCode) },
   });
 
   revalidatePath(`/reviewer/${applicationId}`);
   revalidatePath("/reviewer");
   revalidatePath("/reviewer/ranking");
 
-  return {
-    ok: isFinal
-      ? `Үнэлгээ баталгаажлаа. Нийт ${total} оноо.`
-      : `Ноорог хадгалагдлаа. Нийт ${total} оноо.`,
-  };
+  return { ok: "Үнэлгээ баталгаажлаа." };
 }
 
 const decisionSchema = z.object({
