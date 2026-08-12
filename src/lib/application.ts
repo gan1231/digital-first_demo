@@ -215,13 +215,6 @@ export function getCompleteness(
   if (call.track === CallTrack.STUDENT) {
     if (application.universityGpa === null) {
       majorProblems.push("Голч дүнг оруулаагүй байна.");
-    } else if (
-      call.minUniversityGpa &&
-      application.universityGpa < call.minUniversityGpa
-    ) {
-      majorProblems.push(
-        `Голч дүн (GPA) ${call.minUniversityGpa}-аас дээш байх шаардлагатай.`,
-      );
     }
   }
 
@@ -285,15 +278,6 @@ function graduateEducationProblems(
     application.gpa === null
   ) {
     return ["Боловсролын мэдээлэл дутуу байна."];
-  }
-
-  if (call.minExamScore && application.examScore < call.minExamScore) {
-    problems.push(
-      `ЭЕШ-ын дундаж оноо ${call.minExamScore}-аас дээш байх шаардлагатай.`,
-    );
-  }
-  if (call.minGpa && application.gpa < call.minGpa) {
-    problems.push(`Голч дүн ${call.minGpa}-аас дээш байх шаардлагатай.`);
   }
 
   return problems;
