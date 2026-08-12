@@ -44,7 +44,7 @@ async function main() {
       track: CallTrack.GRADUATE,
       year: currentYear,
       academicYear: `${currentYear}-${currentYear + 1}`,
-      description: 'Дорноговь аймагт 5-аас доошгүй жил оршин суусан, магадлан итгэмжлэгдсэн хөтөлбөрт элсэн суралцах эрх авсан төгсөгчдөд зориулав.',
+      description: 'Дорноговь аймагт 5-аас доошгүй жил оршин суусан, магадлан итгэмжлэгдсэн хөтөлбөрт элсэн суралцах эрх авсан төгсөгчид хамаарна.',
       opensAt: new Date(new Date().setHours(0, 0, 0, 0)),
       closesAt: new Date(new Date().setDate(new Date().getDate() + 10)), // Ойролцоогоор 10 хоног нээлттэй байна
       quota: 10,
@@ -55,7 +55,6 @@ async function main() {
           { code: 'G_CRIT_2', label: 'Элсэлтийн шалгалтын дундаж оноо', maxScore: 40, autoSource: AutoScoreSource.EXAM_SCORE, autoInputMax: 800, sortOrder: 2 },
           { code: 'G_CRIT_3', label: 'Бүрэн дунд боловсролын үнэлгээний дундаж', maxScore: 10, autoSource: AutoScoreSource.GPA, autoInputMax: 100, sortOrder: 3 },
           { code: 'G_CRIT_4', label: 'Нийгмийн оролцоо, манлайллын үзүүлэлт', maxScore: 10, sortOrder: 4 },
-          { code: 'G_CRIT_5', label: 'Эссэний үнэлгээ', maxScore: 15, sortOrder: 5 },
         ]
       },
       requirements: {
@@ -66,7 +65,7 @@ async function main() {
           { code: 'G_REQ_3', label: 'Их, дээд сургуулийн элсэлтийн батламж', isRequired: true, sortOrder: 4 },
           { code: 'G_REQ_4', label: 'Элсэлтийн шалгалтын онооны баталгаажуулсан баримт', isRequired: true, sortOrder: 5 },
           { code: 'G_REQ_5', label: 'Бүрэн дунд боловсролын үнэлгээний лавлагаа', isRequired: true, sortOrder: 6 },
-          { code: 'G_REQ_6', label: 'Нийгмийн оролцоо, манлайлал нотлох баримт (сонголтоор)', isRequired: false, allowMultiple: true, collectsEventName: true, collectsNote: true, sortOrder: 7 },
+          { code: 'G_REQ_6', label: 'Нийгмийн оролцоо, манлайлал нотлох баримт', isRequired: false, allowMultiple: true, collectsEventName: true, collectsNote: true, sortOrder: 7 },
         ]
       }
     }
@@ -89,7 +88,7 @@ async function main() {
       track: CallTrack.STUDENT,
       year: currentYear,
       academicYear: `${currentYear}-${currentYear + 1}`,
-      description: 'Магадлан итгэмжлэгдсэн хөтөлбөрт суралцаж буй, голч дүн 3.0-оос дээш Дорноговь аймгийн харьяат оюутнуудад зориулав.',
+      description: 'Магадлан итгэмжлэгдсэн хөтөлбөрт суралцаж буй, голч дүн 3.0-оос дээш Дорноговь аймгийн харьяат оюутнуудад хамаарна.',
       opensAt: new Date(new Date().setHours(0, 0, 0, 0)),
       closesAt: new Date(new Date().setDate(new Date().getDate() + 10)),
       quota: 10,
@@ -100,7 +99,6 @@ async function main() {
           { code: 'S_CRIT_1', label: 'Сонгосон мэргэжил эрэлттэй, тэргүүлэх чиглэлийн, мөн сумын хүний нөөцийн хэрэгцээ шаардлагад нийцсэн байдал', maxScore: 25, sortOrder: 1 },
           { code: 'S_CRIT_2', label: 'Голч дүн (GPA)', maxScore: 40, autoSource: AutoScoreSource.UNIVERSITY_GPA, autoInputMax: 4.0, sortOrder: 2 },
           { code: 'S_CRIT_3', label: 'Нийгмийн оролцоо, манлайллын үзүүлэлт', maxScore: 15, sortOrder: 3 },
-          { code: 'S_CRIT_4', label: 'Эссэний үнэлгээ', maxScore: 20, sortOrder: 4 },
         ]
       },
       requirements: {
@@ -113,7 +111,7 @@ async function main() {
           { code: 'S_REQ_4', label: 'Голч дүнгийн тодорхойлолт', isRequired: true, sortOrder: 5 },
           { code: 'S_REQ_5', label: 'Ёс зүйн зөрчилгүй тухай тодорхойлолт', isRequired: true, sortOrder: 6 },
           { code: 'S_REQ_6', label: 'Хүсэлт гаргагчийн иргэний үнэмлэхийн хуулбар', isRequired: true, sortOrder: 7 },
-          { code: 'S_REQ_7', label: 'Нийгмийн оролцоо, манлайллыг нотлох баримт (сонголтоор)', isRequired: false, allowMultiple: true, collectsEventName: true, collectsNote: true, sortOrder: 8 },
+          { code: 'S_REQ_7', label: 'Нийгмийн оролцоо, манлайллыг нотлох баримт', isRequired: false, allowMultiple: true, collectsEventName: true, collectsNote: true, sortOrder: 8 },
         ]
       }
     }

@@ -80,9 +80,6 @@ export function CallSummary({
               />
               <span className="text-neutral-700">
                 {requirement.label}
-                {!requirement.isRequired ? (
-                  <span className="text-neutral-400"> (сонголтоор)</span>
-                ) : null}
               </span>
             </li>
           ))}
@@ -91,7 +88,7 @@ export function CallSummary({
 
       <div className="mt-4">
         <h4 className="text-sm font-medium text-neutral-900">
-          Шалгуур үзүүлэлт — нийт 100 оноо
+          Шалгуур үзүүлэлт — нийт {call.criteria.reduce((sum, c) => sum + c.maxScore, 0)} оноо
         </h4>
         <ul className="mt-2 space-y-1">
           {call.criteria.map((criterion) => (

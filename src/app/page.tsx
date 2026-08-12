@@ -82,10 +82,7 @@ export default async function HomePage() {
             <h2 className="text-lg font-medium text-neutral-900">
               Тэтгэлгийн төрөл
             </h2>
-            <p className="mt-1 text-sm text-neutral-600">
-              Төрөл тус бүр өөрийн бүрдүүлэх материал, шалгуур үзүүлэлттэй. Нэг
-              хүн нэг л төрөлд өргөдөл гаргана.
-            </p>
+
 
             {calls.length === 0 ? (
               <p className="mt-6 text-sm text-neutral-600">
