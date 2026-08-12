@@ -19,10 +19,31 @@ export function CallSummary({
     (requirement) => !GENERATED_CODES.includes(requirement.code),
   );
   
-  const visibleCriteria = call.criteria.filter(
-    (criterion) => criterion.label !== "Эссэний үнэлгээ"
-  );
-  
+  const hardcodedGraduateCriteria = [
+    "Монгол Улсын иргэн байх;",
+    "Дорноговь аймагт 5-аас доошгүй жил оршин суусан байх;",
+    "Боловсролын газраас баталсан эрэлттэй, тэргүүлэх мэргэжлийг сонгосон байх;",
+    "Магадлан итгэмжлэгдсэн сургалтын хөтөлбөрт элссэн байх;",
+    "Элсэлтийн шалгалтын дундаж оноо 600 ба түүнээс дээш байх;",
+    "Бүрэн дунд боловсролын үнэлгээний дундаж 80 хувиас доошгүй байх;",
+    "Төгсөөд Дорноговь аймагт 5-аас доошгүй жил ажиллах гэрээ байгуулах;",
+    "Батлан даагчтай байх;",
+    "Амралтын хугацаанд аймагт дадлага хийх;"
+  ];
+
+  const hardcodedStudentCriteria = [
+    "Монгол Улсын иргэн байх;",
+    "Дорноговь аймгийн нутаг дэвсгэрт байнга оршин суугчаар бүртгэлтэй бөгөөд тус аймагт ерөнхий боловсрол эзэмшсэн, эсхүл өмнө нь 5-аас доошгүй жил оршин суусан байх;",
+    "Эрэлттэй, тэргүүлэх мэргэжлээр суралцаж байх;",
+    "Магадлан итгэмжлэгдсэн сургалтын хөтөлбөрт суралцаж байх;",
+    "Голч дүн (GPA) 3.0 ба түүнээс дээш байх;",
+    "Ёс зүйн ноцтой зөрчил гаргаж байгаагүй байх;",
+    "Төгсөөд Дорноговь аймагт 3-аас 5 жил ажиллах гэрээ байгуулах;",
+    "Амралтын хугацаанд аймагт дадлага хийх;"
+  ];
+
+  const displayCriteria = call.track === "GRADUATE" ? hardcodedGraduateCriteria : hardcodedStudentCriteria;
+
   const targetDeadline = new Date("2026-08-20T23:59:00+08:00");
   const hasClosed = new Date() > targetDeadline;
 
@@ -95,18 +116,18 @@ export function CallSummary({
           Шалгуур үзүүлэлт
         </h4>
         <ul className="mt-2 space-y-1">
-          {visibleCriteria.map((criterion) => (
+          {displayCriteria.map((criterionLabel, index) => (
             <li
-              key={criterion.id}
+              key={index}
               className="flex items-start justify-between gap-3 border-b border-neutral-100 pb-1 text-[13px] leading-snug last:border-0"
             >
-              <span className="text-neutral-700">{criterion.label}</span>
+              <span className="text-neutral-700">{criterionLabel}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      {action ? <div className="mt-5 pt-1">{action}</div> : null}
+      {action ? <div className="mt-auto pt-5">{action}</div> : null}
     </section>
   );
 }

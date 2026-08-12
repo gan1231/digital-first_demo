@@ -101,7 +101,7 @@ export default async function HomePage() {
                           href={applyHref}
                           className="block rounded-lg bg-brand-blue px-4 py-2.5 text-center text-sm text-white transition-colors hover:bg-brand-blue-dark"
                         >
-                          Энэ төрлөөр өргөдөл гаргах
+                          ӨРГӨДӨЛ ГАРГАХ
                         </Link>
                       ) : (
                         <span className="block cursor-not-allowed rounded-lg bg-neutral-200 px-4 py-2.5 text-center text-sm text-neutral-500">
