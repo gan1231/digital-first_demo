@@ -13,7 +13,7 @@ export const org = {
   address: "Сайншанд хот, Дорноговь аймаг",
   phone: "7052-0000",
   email: "info@dornogovi.gov.mn",
-  logo: "/logo.svg",
+  logo: "/dornogovi-logo.png",
 } as const;
 
 /** Тэтгэлгийн сангийн нэр — хуудсуудын гол гарчиг. */
@@ -28,5 +28,5 @@ export const department = {
   address: "Сайншанд хот, Дорноговь аймаг",
   phone: "7052-0000",
   email: "bolovsrol@dornogovi.gov.mn",
-  logo: "/logo-bolovsrol.svg",
+  logo: "/edu-logo.jpg",
 } as const;

@@ -27,7 +27,7 @@ export async function SiteHeader() {
           <Link href="/" className="flex items-center gap-3">
             <span className="flex items-center gap-2">
               <Image
-                src="/dornogovi-logo.png"
+                src={org.logo}
                 alt="ДОРНОГОВЬ АЙМГИЙН ЗАСАГ ДАРГЫН ТАМГЫН ГАЗАР"
                 width={44}
                 height={44}
