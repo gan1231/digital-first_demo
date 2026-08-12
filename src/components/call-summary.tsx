@@ -92,7 +92,7 @@ export function CallSummary({
 
       <div className="mt-4">
         <h4 className="text-sm font-medium text-neutral-900">
-          Шалгуур үзүүлэлт — нийт {visibleCriteria.reduce((sum, c) => sum + c.maxScore, 0)} оноо
+          Шалгуур үзүүлэлт
         </h4>
         <ul className="mt-2 space-y-1">
           {visibleCriteria.map((criterion) => (
@@ -101,9 +101,6 @@ export function CallSummary({
               className="flex items-start justify-between gap-3 border-b border-neutral-100 pb-1 text-[13px] leading-snug last:border-0"
             >
               <span className="text-neutral-700">{criterion.label}</span>
-              <span className="shrink-0 font-medium tabular-nums text-neutral-900">
-                {criterion.maxScore}
-              </span>
             </li>
           ))}
         </ul>
