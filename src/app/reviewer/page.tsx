@@ -195,6 +195,7 @@ export default async function ReviewerListPage({
                 <th className="px-3 py-2 text-right font-medium">Миний оноо</th>
                 <th className="px-3 py-2 text-right font-medium">Дундаж</th>
                 <th className="px-3 py-2 font-medium">Төлөв</th>
+                <th className="px-3 py-2 text-center font-medium">Үйлдэл</th>
               </tr>
             </thead>
             <tbody>
@@ -261,6 +262,14 @@ export default async function ReviewerListPage({
                   </td>
                   <td className="px-3 py-2">
                     <StatusBadge status={row.application.status} />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <Link
+                      href={`/reviewer/${row.application.id}`}
+                      className="inline-flex items-center justify-center rounded-lg bg-brand-blue px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-blue-dark"
+                    >
+                      Үнэлэх
+                    </Link>
                   </td>
                 </tr>
               ))}
