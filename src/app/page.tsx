@@ -33,7 +33,7 @@ export default async function HomePage() {
             ) : null}
 
             <h1 className="mx-auto mt-4 max-w-2xl text-3xl font-medium leading-tight text-neutral-900 sm:text-4xl">
-              {fund.name}
+              ДОРНОГОВЬ АЙМГИЙН ЗАСАГ ДАРГЫН ТАМГЫН ГАЗАР
             </h1>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-neutral-600">
               {org.name}, {department.name} хамтран олгох сургалтын төлбөрийн
@@ -59,6 +59,14 @@ export default async function HomePage() {
                 className="rounded-lg border border-neutral-300 px-6 py-2.5 text-neutral-800 transition-colors hover:bg-white"
               >
                 Шаардлага үзэх
+              </a>
+              <a
+                href="/2026tetgeleg.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg border border-brand-blue bg-white px-6 py-2.5 text-brand-blue transition-colors hover:bg-brand-blue/5"
+              >
+                Удирдамж татах (PDF)
               </a>
             </div>
           </div>
