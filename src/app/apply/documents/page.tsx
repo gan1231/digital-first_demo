@@ -86,10 +86,6 @@ export default async function DocumentsStepPage() {
           );
         })}
 
-        <Alert tone="info">
-          Анкет болон эсээг систем автоматаар бүрдүүлэх тул тусад нь хавсаргах
-          шаардлагагүй.
-        </Alert>
 
         <div className="flex justify-end">
           <Link

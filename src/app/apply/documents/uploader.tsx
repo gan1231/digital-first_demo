@@ -288,16 +288,7 @@ export function Uploader({
             </div>
           ))}
 
-          {allowMultiple ? (
-            <button
-              type="button"
-              onClick={addRow}
-              disabled={busy}
-              className="rounded-lg border border-dashed border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50"
-            >
-              + Мөр нэмэх
-            </button>
-          ) : null}
+          {/* allowMultiple нь байсан ч мөр нэмэх товчийг харуулахгүй */}
         </div>
       ) : allowMultiple || documents.length === 0 ? (
         <input

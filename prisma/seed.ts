@@ -62,7 +62,7 @@ async function main() {
         create: [
           { code: 'G_REQ_1', label: 'Батлан даагчийн хүсэлт', isRequired: true, sortOrder: 1 },
           { code: 'G_REQ_1_1', label: 'Батлан даагчийн иргэний үнэмлэхийн хуулбар', description: 'Төрийн үйлчилгээний нэгдсэн систем (e-mongolia)-ээс авсан Иргэний үнэмлэхийн лавлагааг хавсаргах.', helpUrl: 'https://e-mongolia.mn/service/5d8b13383666c358f659b2ee', isRequired: true, sortOrder: 2 },
-          { code: 'G_REQ_2', label: 'Иргэний үнэмлэхийн хуулбар', isRequired: true, sortOrder: 3 },
+          { code: 'G_REQ_2', label: 'Хүсэлт гаргагчийн иргэний үнэмлэхийн хуулбар', isRequired: true, sortOrder: 3 },
           { code: 'G_REQ_3', label: 'Их, дээд сургуулийн элсэлтийн батламж', isRequired: true, sortOrder: 4 },
           { code: 'G_REQ_4', label: 'Элсэлтийн шалгалтын онооны баталгаажуулсан баримт', isRequired: true, sortOrder: 5 },
           { code: 'G_REQ_5', label: 'Бүрэн дунд боловсролын үнэлгээний лавлагаа', isRequired: true, sortOrder: 6 },
@@ -108,10 +108,11 @@ async function main() {
           { code: 'S_REQ_1', label: 'Батлан даагчийн хүсэлт', isRequired: true, sortOrder: 1 },
           { code: 'S_REQ_1_1', label: 'Батлан даагчийн иргэний үнэмлэхийн хуулбар', description: 'Төрийн үйлчилгээний нэгдсэн систем (e-mongolia)-ээс авсан Иргэний үнэмлэхийн лавлагааг хавсаргах.', helpUrl: 'https://e-mongolia.mn/service/5d8b13383666c358f659b2ee', isRequired: true, sortOrder: 2 },
           { code: 'S_REQ_2', label: 'Оршин суугаа газрын лавлагаа', isRequired: true, sortOrder: 3 },
+          { code: 'S_REQ_2_1', label: 'Дорноговь аймагт ерөнхий боловсрол эзэмшсэнийг нотлох баримт', isRequired: true, sortOrder: 3.5 },
           { code: 'S_REQ_3', label: 'Суралцаж буй сургуулийн тодорхойлолт', isRequired: true, sortOrder: 4 },
           { code: 'S_REQ_4', label: 'Голч дүнгийн тодорхойлолт', isRequired: true, sortOrder: 5 },
           { code: 'S_REQ_5', label: 'Ёс зүйн зөрчилгүй тухай тодорхойлолт', isRequired: true, sortOrder: 6 },
-          { code: 'S_REQ_6', label: 'Иргэний үнэмлэхийн хуулбар', isRequired: true, sortOrder: 7 },
+          { code: 'S_REQ_6', label: 'Хүсэлт гаргагчийн иргэний үнэмлэхийн хуулбар', isRequired: true, sortOrder: 7 },
           { code: 'S_REQ_7', label: 'Нийгмийн оролцоо, манлайллыг нотлох баримт (сонголтоор)', isRequired: false, allowMultiple: true, collectsEventName: true, collectsNote: true, sortOrder: 8 },
         ]
       }
