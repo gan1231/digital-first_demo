@@ -71,6 +71,7 @@ export function ScoringForm({
                         name={`status__${criterion.code}`}
                         value="VERIFIED"
                         defaultChecked={criterion.status === "VERIFIED"}
+                        disabled={!!submittedAt}
                         required
                         className="text-brand-blue focus:ring-brand-blue"
                       />
@@ -82,6 +83,7 @@ export function ScoringForm({
                         name={`status__${criterion.code}`}
                         value="REJECTED"
                         defaultChecked={criterion.status === "REJECTED"}
+                        disabled={!!submittedAt}
                         required
                         className="text-brand-blue focus:ring-brand-blue"
                       />
@@ -97,6 +99,7 @@ export function ScoringForm({
                       max={criterion.maxScore}
                       step={0.1}
                       defaultValue={criterion.score ?? criterion.suggested ?? ""}
+                      disabled={!!submittedAt}
                       placeholder="0.0"
                       className="w-20 rounded-md border border-neutral-300 px-2 py-1 text-right text-sm font-medium text-neutral-900 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
                     />
@@ -110,9 +113,10 @@ export function ScoringForm({
                   name={`comment__${criterion.code}`}
                   rows={2}
                   defaultValue={criterion.comment}
+                  disabled={!!submittedAt}
                   placeholder="Тайлбар бичих..."
                   required
-                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue disabled:opacity-60 disabled:bg-neutral-50"
                 />
               </div>
             </div>
@@ -126,11 +130,12 @@ export function ScoringForm({
             name="intent"
             value="save"
             variant="secondary"
+            disabled={!!submittedAt}
             pendingLabel="Хадгалж байна…"
           >
             Ноороглох
           </SubmitButton>
-          <SubmitButton name="intent" value="submit" pendingLabel="Хадгалж байна…">
+          <SubmitButton name="intent" value="submit" disabled={!!submittedAt} pendingLabel="Хадгалж байна…">
             Баталгаажуулах
           </SubmitButton>
         </div>

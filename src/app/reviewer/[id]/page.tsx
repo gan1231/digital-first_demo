@@ -239,7 +239,10 @@ export default async function ApplicationReviewPage({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-lg font-medium text-neutral-900">
-                {application.lastName} {application.firstName}
+                {(() => {
+                  const d = application.submittedAt || application.createdAt;
+                  return `${d.getFullYear()}${(d.getMonth() + 1).toString().padStart(2, "0")}${d.getDate().toString().padStart(2, "0")}${d.getHours().toString().padStart(2, "0")}${d.getMinutes().toString().padStart(2, "0")}${d.getSeconds().toString().padStart(2, "0")}`;
+                })()}
               </h1>
               <p className="mt-0.5 text-sm text-neutral-600">
                 {application.registerNo} · {application.soum} сум ·{" "}

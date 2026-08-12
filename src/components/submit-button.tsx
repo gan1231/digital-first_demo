@@ -9,6 +9,7 @@ type SubmitButtonProps = {
   name?: string;
   value?: string;
   className?: string;
+  disabled?: boolean;
 };
 
 export function SubmitButton({
@@ -18,6 +19,7 @@ export function SubmitButton({
   name,
   value,
   className = "",
+  disabled = false,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
@@ -31,7 +33,7 @@ export function SubmitButton({
       type="submit"
       name={name}
       value={value}
-      disabled={pending}
+      disabled={pending || disabled}
       className={`rounded-lg px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${styles} ${className}`}
     >
       {pending ? pendingLabel : children}
