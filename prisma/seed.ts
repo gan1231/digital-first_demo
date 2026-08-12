@@ -60,7 +60,7 @@ async function main() {
       },
       requirements: {
         create: [
-          { code: 'G_REQ_1', label: 'Батлан даагчийн хүсэлт', isRequired: true, sortOrder: 1 },
+          { code: 'G_REQ_1', label: 'Батлан даагчийн иргэний үнэмлэхийн хуулбар', description: 'Төрийн үйлчилгээний нэгдсэн систем (e-mongolia)-ээс авсан Иргэний үнэмлэхийн лавлагааг хавсаргах.', helpUrl: 'https://e-mongolia.mn/service/5d8b13383666c358f659b2ee', isRequired: true, sortOrder: 1 },
           { code: 'G_REQ_2', label: 'Иргэний үнэмлэхийн хуулбар', isRequired: true, sortOrder: 2 },
           { code: 'G_REQ_3', label: 'Их, дээд сургуулийн элсэлтийн батламж', isRequired: true, sortOrder: 3 },
           { code: 'G_REQ_4', label: 'Элсэлтийн шалгалтын онооны баталгаажуулсан баримт', isRequired: true, sortOrder: 4 },
