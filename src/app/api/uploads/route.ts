@@ -9,6 +9,7 @@ import {
   sniffMimeType,
   storage,
 } from "@/lib/storage";
+import { getCallById } from "@/lib/call";
 
 const EDITABLE_STATUSES: ApplicationStatus[] = [
   ApplicationStatus.DRAFT,
@@ -67,7 +68,6 @@ export async function POST(request: Request) {
 
   const application = await prisma.application.findFirst({
     where: { userId: user.id },
-    include: { call: { include: { requirements: true } } },
   });
 
   if (!application) {
@@ -81,7 +81,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const requirement = application.call.requirements.find(
+  const call = await getCallById(application.callId);
+  const requirements = call?.requirements ?? [];
+
+  const requirement = requirements.find(
     (item) => item.code === requirementCode,
   );
 

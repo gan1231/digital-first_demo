@@ -81,11 +81,11 @@ export function RegisterForm({ calls }: { calls: CallOption[] }) {
                 <span className="mt-0.5 block text-xs text-neutral-500">
                   {call.name}
                 </span>
-                <span className="mt-0.5 block text-xs text-neutral-500">
-                  {call.isOpen
-                    ? `Хүлээн авах эцсийн хугацаа: ${call.closesLabel}`
-                    : "Хүлээн авах хугацаа дууссан"}
-                </span>
+                {!call.isOpen && (
+                  <span className="mt-0.5 block text-xs text-neutral-500">
+                    Хүлээн авах хугацаа дууссан
+                  </span>
+                )}
               </span>
             </label>
           ))}

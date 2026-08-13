@@ -22,7 +22,9 @@ function injectHardcodedRequirements(call: ActiveCall) {
   const newRequirements = [];
   const hasGuarantorId = call.requirements.some(r => r.label === 'Батлан даагчийн иргэний үнэмлэхийн хуулбар');
   const hasHsProof = call.requirements.some(r => r.label === 'Дорноговь аймагт ерөнхий боловсрол эзэмшсэнийг нотлох баримт');
-  
+  let injectedGuarantor = false;
+  let injectedHsProof = false;
+
   for (const req of call.requirements) {
     if (req.label === 'Иргэний үнэмлэхийн хуулбар') {
       req.label = 'Хүсэлт гаргагчийн иргэний үнэмлэхийн хуулбар';
@@ -30,7 +32,8 @@ function injectHardcodedRequirements(call: ActiveCall) {
     
     newRequirements.push(req);
     // Only inject if it doesn't already exist in the database
-    if (!hasGuarantorId && ['GUARANTOR_REQUEST', 'G_REQ_1', 'S_REQ_1'].includes(req.code)) {
+    if (!hasGuarantorId && !injectedGuarantor && ['GUARANTOR_REQUEST', 'G_REQ_1', 'S_REQ_1'].includes(req.code)) {
+      injectedGuarantor = true;
       newRequirements.push({
         id: 'hardcoded-guarantor-id',
         callId: call.id,
@@ -47,7 +50,8 @@ function injectHardcodedRequirements(call: ActiveCall) {
     }
 
     // Inject Dornogovi HS proof for students
-    if (!hasHsProof && (req.code === 'S_REQ_2' || req.code === 'RESIDENCE_REF' || req.label === 'Оршин суугаа газрын лавлагаа')) {
+    if (!hasHsProof && !injectedHsProof && (req.code === 'S_REQ_2' || req.code === 'RESIDENCE_REF' || req.label === 'Оршин суугаа газрын лавлагаа')) {
+      injectedHsProof = true;
       newRequirements.push({
         id: 'hardcoded-hs-dornogovi-proof',
         callId: call.id,
@@ -62,6 +66,8 @@ function injectHardcodedRequirements(call: ActiveCall) {
         sortOrder: req.sortOrder + 0.5,
       });
     }
+
+
   }
   call.requirements = newRequirements;
   return call;

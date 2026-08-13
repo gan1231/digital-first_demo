@@ -65,7 +65,6 @@ async function main() {
           { code: 'G_REQ_3', label: 'Их, дээд сургуулийн элсэлтийн батламж', isRequired: true, sortOrder: 4 },
           { code: 'G_REQ_4', label: 'Элсэлтийн шалгалтын онооны баталгаажуулсан баримт', isRequired: true, sortOrder: 5 },
           { code: 'G_REQ_5', label: 'Бүрэн дунд боловсролын үнэлгээний лавлагаа', isRequired: true, sortOrder: 6 },
-          { code: 'G_REQ_6', label: 'Нийгмийн оролцоо, манлайлал нотлох баримт', isRequired: false, allowMultiple: true, collectsEventName: true, collectsNote: true, sortOrder: 7 },
         ]
       }
     }
