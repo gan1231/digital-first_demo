@@ -32,7 +32,7 @@ export default async function ReviewStepPage() {
     <div className="space-y-4">
       <Card
         title={isEditable ? "Илгээхийн өмнө" : "Бүрдэл"}
-        description={`Хүлээн авах эцсийн хугацаа: ${formatCallDate(call.closesAt)}`}
+        description={`Хүлээн авах эцсийн хугацаа: 08 дугаар сарын 20-ны өдөр`}
       >
         <ul className="space-y-2">
           {steps.map((step) => (
