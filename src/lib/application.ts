@@ -21,7 +21,6 @@ export const APPLY_STEPS = [
   { slug: "personal", label: "Хувийн мэдээлэл" },
   { slug: "education", label: "Боловсрол" },
   { slug: "major", label: "Сургууль, мэргэжил" },
-  { slug: "essay", label: "Эсээ" },
   { slug: "documents", label: "Материал" },
   { slug: "review", label: "Илгээх" },
 ] as const;
@@ -226,15 +225,7 @@ export function getCompleteness(
     majorProblems.push("Тэргүүлэх болон эрэлттэй мэргэжлээс сонгоогүй байна.");
   }
 
-  const essayProblems: string[] = [];
-  const words = application.essayWordCount ?? 0;
-  if (!application.essayText) {
-    essayProblems.push("Эсээ бичээгүй байна.");
-  } else if (words < ESSAY_MIN_WORDS || words > ESSAY_MAX_WORDS) {
-    essayProblems.push(
-      `Эсээ ${ESSAY_MIN_WORDS}-${ESSAY_MAX_WORDS} үгтэй байх ёстой (одоо ${words}).`,
-    );
-  }
+
 
   const documentProblems = call.requirements
     .filter(
@@ -253,7 +244,6 @@ export function getCompleteness(
     personal: personalProblems,
     education: educationProblems,
     major: majorProblems,
-    essay: essayProblems,
     documents: documentProblems,
   };
 

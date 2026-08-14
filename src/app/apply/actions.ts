@@ -10,7 +10,6 @@ import {
   EDITABLE_STATUSES,
   createApplication,
   educationSchema,
-  essaySchema,
   getApplicationContext,
   getBlockingProblems,
   getCompleteness,
@@ -19,7 +18,6 @@ import {
   type StepSlug,
 } from "@/lib/application";
 import { getActiveCalls, getCallTiming } from "@/lib/call";
-import { countEssayWords, sanitizeEssay } from "@/lib/essay";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -27,7 +25,7 @@ export type FormState = { error?: string } | undefined;
 
 type EditableStep = Extract<
   StepSlug,
-  "personal" | "education" | "major" | "essay"
+  "personal" | "education" | "major"
 >;
 
 function nextStepSlug(current: StepSlug): string {
@@ -79,24 +77,7 @@ export async function saveStep(
   const raw = Object.fromEntries(formData);
   const id = context.application.id;
 
-  if (step === "essay") {
-    const parsed = essaySchema.safeParse(raw);
-    if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-    // Эсээ нь эдитэрээс HTML хэлбэрээр ирнэ. Комисст эргээд харагдах тул
-    // хадгалахын өмнө заавал цэвэрлэнэ.
-    const essayText = sanitizeEssay(parsed.data.essayText);
-    const essayWordCount = countEssayWords(essayText);
-
-    if (essayWordCount === 0) {
-      return { error: "Эсээгээ бичнэ үү." };
-    }
-
-    await prisma.application.update({
-      where: { id },
-      data: { essayText, essayWordCount },
-    });
-  } else if (step === "personal") {
+  if (step === "personal") {
     // Олон утгатай checkbox тул targetGroupTypes-ыг тусад нь цуглуулна.
     const parsed = personalSchema.safeParse({
       ...raw,
