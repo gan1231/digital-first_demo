@@ -30,19 +30,50 @@ export default async function ApplyLayout({
       <SiteHeader />
 
       <main className="flex-1 bg-neutral-50">
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-          {context ? (
-            <>
-              <p className="mb-3 text-xs text-neutral-500">
-                Сонгосон төрөл:{" "}
-                <span className="text-neutral-800">
-                  {trackLabels[context.call.track]}
-                </span>
-              </p>
-              <Stepper steps={steps} />
-            </>
-          ) : null}
-          {children}
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+            <div className="lg:col-span-8">
+              {context ? (
+                <>
+                  <p className="mb-3 text-xs text-neutral-500">
+                    Сонгосон төрөл:{" "}
+                    <span className="text-neutral-800">
+                      {trackLabels[context.call.track]}
+                    </span>
+                  </p>
+                  <Stepper steps={steps} />
+                </>
+              ) : null}
+              {children}
+            </div>
+            <div className="mt-8 lg:col-span-4 lg:mt-0">
+              <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+                <h3 className="font-semibold text-neutral-900 mb-4">САНАМЖ</h3>
+                <ul className="space-y-3 text-sm text-neutral-700">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-brand-blue">➤</span>
+                    <span>Өөрийн ашигладаг цахим хаягаар бүртгүүлэх</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-brand-blue">➤</span>
+                    <span>Мэдээллээ нэг удаа үнэн, зөв бөглөнө.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-brand-blue">➤</span>
+                    <span>Мэдээллээ илгээсэн тохиолдолд засварлах боломжгүй.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-brand-blue">➤</span>
+                    <span>Худал мэдээлэл ирүүлсэн тохиолдолд тэтгэлэгт хамрагдах боломжгүй</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-brand-blue">➤</span>
+                    <span>Хавсаргах материалыг чанартай, харагдахуйц тод оруулах</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
