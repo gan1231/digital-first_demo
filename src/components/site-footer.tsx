@@ -5,35 +5,17 @@ import { department, fund, org } from "@/lib/brand";
 export function SiteFooter() {
   return (
     <footer className="bg-brand-blue text-white">
-      <div className="mx-auto grid max-w-6xl gap-5 px-4 py-6 text-sm sm:grid-cols-2 sm:px-6">
-        <div className="flex items-start gap-3">
-          <Image
-            src={org.logo}
-            alt=""
-            width={36}
-            height={36}
-            className="size-9 shrink-0"
-          />
-          <div className="leading-relaxed">
-            <p className="font-medium">{org.name}</p>
-            <p className="text-white/80">{org.address}</p>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-3">
-          <Image
-            src={department.logo}
-            alt=""
-            width={36}
-            height={36}
-            className="size-9 shrink-0"
-          />
-          <div className="leading-relaxed">
-            <p className="font-medium">{department.name}</p>
-            <p className="text-white/80">
-              {department.phone} · {department.email}
-            </p>
-          </div>
+      <div className="mx-auto flex max-w-6xl items-start gap-3 px-4 py-6 text-sm sm:px-6">
+        <Image
+          src={org.logo}
+          alt=""
+          width={36}
+          height={36}
+          className="size-9 shrink-0"
+        />
+        <div className="leading-relaxed">
+          <p className="font-medium">{org.name}</p>
+          <p className="text-white/80">{org.address} · {org.phone}</p>
         </div>
       </div>
 

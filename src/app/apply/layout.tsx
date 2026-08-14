@@ -70,6 +70,10 @@ export default async function ApplyLayout({
                     <span className="mt-1 flex-shrink-0 text-brand-blue">➤</span>
                     <span>Хавсаргах материалыг чанартай, харагдахуйц тод оруулах</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 text-brand-orange">➤</span>
+                    <span className="font-medium text-brand-orange">Материал бүрдүүлэх болон системтэй холбоотой тусламж хэрэгтэй бол 90090826 дугаарт холбогдоно уу.</span>
+                  </li>
                 </ul>
               </div>
             </div>

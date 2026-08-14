@@ -125,6 +125,115 @@ export default async function HomePage() {
         </section>
       </main>
 
+      <section className="bg-white py-14 border-t border-neutral-200">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <h2 className="text-xl font-medium text-neutral-900 mb-8 text-center uppercase">
+            Түгээмэл асуулт, хариулт
+          </h2>
+          <div className="space-y-4">
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                1. Хэн тэтгэлэгт хамрагдах боломжтой вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                <ul className="list-disc space-y-1">
+                  <li>Их сургуульд суралцаж буй оюутан, ерөнхий боловсролын сургууль болон мэргэжлийн болон техникийн боловсролын сургалтын байгууллагын төгсөгчид хамрагдах боломжтой.</li>
+                  <li>Монгол Улсын иргэн, Дорноговь аймагт бүртгэлтэй (сүүлийн 5-аас доошгүй жил оршин суусан байх шаардлагатай)</li>
+                </ul>
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                2. Ямар шалгуурыг хангасан суралцагч тэтгэлэгт хамрагдах боломжтой вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                <p className="font-medium text-neutral-800 mb-1">Ерөнхий боловсролын сургууль болон мэргэжлийн болон техникийн боловсролын сургалтын байгууллагын төгсөгч:</p>
+                <ul className="list-disc space-y-1 mb-3">
+                  <li>Их сургуульд элсэн орсон элсэлтийн шалгалтын оноо 620 болон түүнээс дээш байх</li>
+                  <li>Бүрэн дунд боловсролын үнэлгээний дундаж 80 хувиас доошгүй байх</li>
+                  <li>Аймгийн баталсан эрэлттэй, тэргүүлэх мэргэжлийг сонгож их сургуульд суралцах эрхийн бичгээ тухайн элссэн сургуулиасаа авсан байх</li>
+                  <li>Тухайн элссэн сургуулийн сургалтын хөтөлбөр нь магадлан итгэмжлэгдсэн байх</li>
+                  <li>Эцэг эх, асран хамгаалагч нь батлан даагчийн хүсэлт гаргасан байх</li>
+                </ul>
+                <p className="font-medium text-neutral-800 mb-1">Их сургуульд суралцаж буй оюутан:</p>
+                <ul className="list-disc space-y-1">
+                  <li>Тухайн улирлын голч дүн (GPA) 3.2 ба түүнээс дээш байх;</li>
+                  <li>Их сургуульд суралцаж байх хугацаанд ёс зүйн ноцтой зөрчил гаргаагүй байх;</li>
+                  <li>Аймгийн баталсан эрэлттэй, тэргүүлэх мэргэжлийг сонгож их сургуульд суралцах эрхийн бичгээ тухайн элссэн сургуулиасаа авсан байх</li>
+                  <li>Тухайн элссэн сургуулийн сургалтын хөтөлбөр нь магадлан итгэмжлэгдсэн байх</li>
+                  <li>Эцэг эх, асран хамгаалагч нь батлан даагчийн хүсэлт гаргасан байх</li>
+                  <li>Оюутан нь эзэмшиж буй мэргэжлийн дагуу улирал, зуны амралтын хугацаанд орон нутагтаа дадлага хийх</li>
+                </ul>
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                3. Тэтгэлгийг хэдий хугацаанд олгох вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Суралцаж байх хугацаандаа гэрээгээр хүлээсэн үүргээ зөрчөөгүй тохиолдолд тэтгэлгийг төгсөх хүртэлх хугацаанд бүрэн олгоно. Жишээбэл: 1 дүгээр курсээс тэтгэлэгт хамрагдсан бол төгсөх хүртэл тэтгэлэгт хамрагдана.
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                4. Тэтгэлгийг хэрхэн олгох вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Тэтгэлэг олгогч тухайн сургуулийн сургалтын төлбөрийн нэхэмжлэлийн дагуу жилд 1 удаа сургалтын байгууллагын дансанд 100% бүрэн байршуулна.
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                5. Ямар нөхцөлд тэтгэлгийг түдгэлзүүлэх вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Сургуулиас хасагдсан, голч дүн шаардлага хангаагүй, худал мэдээлэл өгсөн, ёс зүйн ноцтой зөрчил гаргасан, гэрээний үүргээ биелүүлээгүй болон журманд заасан бусад заалтуудыг зөрчсөн тохиолдолд тэтгэлгийг зогсооно.
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                6. Нэг айлаас хэдэн хүүхэд хамрагдах боломжтой вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Журмын дагуу шалгуур хангасан тохиолдолд нэг айлаас 2 хүртэл хүүхэд хамрагдах боломжтой.
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                7. Батлан даагч гэж хэн бэ, ямар үүрэгтэй вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Батлан даагч нь хүсэлт гаргаснаар тэтгэлэгт хамрагдагчийн гэрээний биелэлтийг хамтран хариуцаж гэрээ зөрчсөн тохиолдолд сургалтын төлбөрийг нөхөн төлнө. /Батлан даагч нь эцэг эх, асран хамгаалагч, төрсөн ах, эгч болно/
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                8. Сонгон шалгаруулалтын явц яаж явагдах вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Хүсэлтийг цахимаар хүлээн авч, материалыг хиймэл оюунд суурилан сонгон шалгаруулалт явуулна. Эхний шатанд материал тэнцсэн суралцагчидтай ярилцлага зохион байгуулж, сонгон шалгаруулалтын үр дүнг нээлттэй мэдээлнэ.
+              </div>
+            </details>
+
+            <details className="group rounded-lg border border-neutral-200 bg-neutral-50 p-4 open:bg-white">
+              <summary className="cursor-pointer font-medium text-neutral-900">
+                9. Төгсөөд хэдий хэр хугацаанд аймагт ажиллах ёстой вэ?
+              </summary>
+              <div className="mt-3 text-sm text-neutral-600 pl-5">
+                Ерөнхий боловсролын төгсөгчид 5-аас доошгүй жил, их сургуулийн оюутнууд 3-аас доошгүй жил ажиллана.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
       <SiteFooter />
     </div>
   );

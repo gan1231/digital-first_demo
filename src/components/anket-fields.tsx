@@ -476,19 +476,11 @@ export function PersonalAnketFields({
                   key={type}
                   name="targetGroupTypes"
                   value={type}
-                  label={TARGET_GROUP_LABELS[type]}
+                  label={TARGET_GROUP_LABELS[type as keyof typeof TARGET_GROUP_LABELS] || type}
                   defaultChecked={selectedGroups.includes(type)}
                 />
               ))}
             </div>
-            <PatternField
-              label="Тайлбар"
-              name="targetGroupNote"
-              rule={FORMATS.cyrillicText}
-              defaults={defaults}
-              required={false}
-              placeholder="«Бусад» сонгосон бол тодруулна уу"
-            />
           </div>
         ) : null}
       </AnketSection>

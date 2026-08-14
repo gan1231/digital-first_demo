@@ -11,7 +11,7 @@ export const org = {
   siteName: "Тэтгэлгийн бүртгэл",
   domain: "dornogovi.gov.mn",
   address: "Сайншанд хот, Дорноговь аймаг",
-  phone: "7052-0000",
+  phone: "90090826",
   email: "info@dornogovi.gov.mn",
   logo: "/dornogovi-logo.png",
 } as const;

@@ -9,12 +9,11 @@ import { z } from "zod";
 import { SOUMS } from "@/lib/soum";
 import { checkIsDemandedProfession, checkIsPriorityProfession } from "@/lib/professions";
 
-export const TARGET_GROUP_LABELS: Record<TargetGroupType, string> = {
+export const TARGET_GROUP_LABELS: Partial<Record<TargetGroupType, string>> = {
   ORPHAN: "Бүтэн өнчин",
   DISABILITY: "Хөгжлийн бэрхшээлтэй",
   LOW_INCOME: "Төлбөрийн чадваргүй",
   OUTSTANDING: "Онцгой амжилт гаргасан",
-  OTHER: "Бусад",
 };
 
 export const TARGET_GROUP_VALUES = Object.keys(
