@@ -68,6 +68,14 @@ export default async function HomePage() {
               >
                 Удирдамж татах (PDF)
               </a>
+              <a
+                href="/havsralt.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg border border-brand-blue bg-white px-6 py-2.5 text-brand-blue transition-colors hover:bg-brand-blue/5"
+              >
+                Эрэлттэй мэргэжлийн жагсаалт харах
+              </a>
             </div>
           </div>
         </section>

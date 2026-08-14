@@ -23,6 +23,8 @@
     "bcryptjs": "^3.0.3",
     "next": "^15.5.22",
     "nodemailer": "^7.0.13",
+    "pdf-parse": "^2.4.5",
+    "pdf2json": "^4.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sanitize-html": "^2.17.6",

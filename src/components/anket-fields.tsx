@@ -657,7 +657,7 @@ export function ProgramAnketFields({ defaults }: { defaults: AnketDefaults }) {
                 </optgroup>
               ))}
               {DEMANDED_PROFESSIONS.map((group) => (
-                <optgroup key={`d-${group.category}`} label={`Эрэлттэй мэргэжил: ${group.category}`}>
+                <optgroup key={`d-${group.category}`} label={`Тэргүүлэх болон эрэлттэй: ${group.category}`}>
                   {group.professions.map((prof) => (
                     <option key={prof} value={prof}>{prof}</option>
                   ))}
