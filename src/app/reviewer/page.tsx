@@ -9,6 +9,11 @@ import { prisma } from "@/lib/prisma";
 import { calculateTotalScore } from "@/lib/scoring";
 import { SOUMS } from "@/lib/soum";
 import { Alert, StatusBadge, inputClass, statusLabels } from "@/components/ui";
+import { hideApplication, unhideApplication } from "./actions";
+import {
+  HideApplicationButton,
+  UnhideApplicationButton,
+} from "./hide-application";
 
 export const metadata: Metadata = { title: "Өргөдлүүд" };
 export const dynamic = "force-dynamic";
@@ -19,6 +24,7 @@ type SearchParams = {
   status?: string;
   soum?: string;
   mine?: string;
+  hidden?: string;
 };
 
 export default async function ReviewerListPage({
@@ -39,10 +45,15 @@ export default async function ReviewerListPage({
     : undefined;
   const scopedCalls = selectedCall ? [selectedCall] : calls;
 
+  const isAdmin = user.role === Role.ADMIN;
+  // Нуусан өргөдлийг зөвхөн админ, зөвхөн зориуд шүүсэн үед хардаг.
+  const showHidden = isAdmin && filters.hidden === "1";
+
   const applications = await prisma.application.findMany({
     where: {
       callId: { in: scopedCalls.map((call) => call.id) },
       status: { not: ApplicationStatus.DRAFT },
+      hiddenAt: showHidden ? { not: null } : null,
       ...(filters.status ? { status: filters.status as ApplicationStatus } : {}),
       ...(filters.soum ? { soum: filters.soum } : {}),
       ...(filters.q
@@ -107,12 +118,32 @@ export default async function ReviewerListPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-medium text-neutral-900">Өргөдлүүд</h1>
-        <p className="mt-0.5 text-sm text-neutral-600">
-          {selectedCall ? selectedCall.name : "Бүх төрөл"} · нийт {rows.length}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-medium text-neutral-900">
+            {showHidden ? "Нуусан өргөдлүүд" : "Өргөдлүүд"}
+          </h1>
+          <p className="mt-0.5 text-sm text-neutral-600">
+            {selectedCall ? selectedCall.name : "Бүх төрөл"} · нийт {rows.length}
+          </p>
+        </div>
+
+        {isAdmin ? (
+          <Link
+            href="/reviewer/users"
+            className="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-800 transition-colors hover:bg-neutral-50"
+          >
+            Нийт хэрэглэгчийн төлөв
+          </Link>
+        ) : null}
       </div>
+
+      {showHidden ? (
+        <Alert tone="warning">
+          Эдгээр өргөдөл комиссын жагсаалт, эцсийн жагсаалтад харагдахгүй.
+          Баримт бичиг нь устаагүй тул хүссэн үедээ сэргээж болно.
+        </Alert>
+      ) : null}
 
       <form className="flex flex-wrap gap-2 rounded-xl border border-neutral-200 bg-white p-3">
         <input
@@ -169,6 +200,18 @@ export default async function ReviewerListPage({
           />
           Миний үнэлээгүй
         </label>
+        {isAdmin ? (
+          <label className="flex items-center gap-2 px-1 text-sm text-neutral-700">
+            <input
+              type="checkbox"
+              name="hidden"
+              value="1"
+              defaultChecked={showHidden}
+              className="size-4"
+            />
+            Нуусан
+          </label>
+        ) : null}
         <button
           type="submit"
           className="rounded-lg bg-brand-blue px-4 py-2 text-sm text-white transition-colors hover:bg-brand-blue-dark"
@@ -263,13 +306,27 @@ export default async function ReviewerListPage({
                   <td className="px-3 py-2">
                     <StatusBadge status={row.status} />
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    <Link
-                      href={`/reviewer/${row.id}`}
-                      className="inline-flex items-center justify-center rounded-lg bg-brand-blue px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-blue-dark"
-                    >
-                      Үнэлэх
-                    </Link>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/reviewer/${row.id}`}
+                        className="inline-flex items-center justify-center rounded-lg bg-brand-blue px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-blue-dark"
+                      >
+                        Үнэлэх
+                      </Link>
+                      {isAdmin ? (
+                        showHidden ? (
+                          <UnhideApplicationButton
+                            action={unhideApplication.bind(null, row.id)}
+                          />
+                        ) : (
+                          <HideApplicationButton
+                            action={hideApplication.bind(null, row.id)}
+                            name={`${row.lastName ?? ""} ${row.firstName ?? ""}`.trim() || "Нэргүй"}
+                          />
+                        )
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

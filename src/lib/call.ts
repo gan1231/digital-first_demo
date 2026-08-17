@@ -5,6 +5,7 @@ import type {
   ScoringCriterion,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ESSAY_CRITERION_CODES } from "@/lib/sections";
 
 export type ActiveCall = ScholarshipCall & {
   requirements: DocumentRequirement[];
@@ -73,6 +74,18 @@ function injectHardcodedRequirements(call: ActiveCall) {
   return call;
 }
 
+/**
+ * Эсээний шалгуурыг журмаас хассан тул үнэлгээ, эцсийн жагсаалт, нийт оноо
+ * бодох гурав нь энэ шалгуурыг огт хардаггүй. Нэг цэгт шүүснээр хуудас бүрт
+ * давтахгүй, санамсаргүй үлдэх ч эрсдэлгүй.
+ */
+function dropEssayCriteria(call: ActiveCall): ActiveCall {
+  call.criteria = call.criteria.filter(
+    (criterion) => !ESSAY_CRITERION_CODES.includes(criterion.code),
+  );
+  return call;
+}
+
 /** Идэвхтэй бүх төрлийн тэтгэлэг. Төрөл бүр өөрийн материал, шалгууртай. */
 export async function getActiveCalls(): Promise<ActiveCall[]> {
   const calls = await prisma.scholarshipCall.findMany({
@@ -80,12 +93,12 @@ export async function getActiveCalls(): Promise<ActiveCall[]> {
     orderBy: [{ year: "desc" }, { track: "asc" }],
     include,
   });
-  return calls.map(injectHardcodedRequirements);
+  return calls.map((call) => injectHardcodedRequirements(dropEssayCriteria(call)));
 }
 
 export async function getCallById(id: string): Promise<ActiveCall | null> {
   const call = await prisma.scholarshipCall.findUnique({ where: { id }, include });
-  return call ? injectHardcodedRequirements(call) : null;
+  return call ? injectHardcodedRequirements(dropEssayCriteria(call)) : null;
 }
 
 export const trackLabels: Record<CallTrack, string> = {

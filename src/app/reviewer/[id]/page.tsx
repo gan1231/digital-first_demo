@@ -5,15 +5,18 @@ import { CallTrack, Role, ReviewSection } from "@prisma/client";
 import { requireRole, writeAudit } from "@/lib/auth";
 import { TARGET_GROUP_LABELS } from "@/lib/anket";
 import { GENERATED_CODES } from "@/lib/application-shared";
-import { essayToHtml } from "@/lib/essay";
 import { trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
 import { calculateTotalScore, suggestScore } from "@/lib/scoring";
-import { Alert, Card, StatusBadge, essayProseClass } from "@/components/ui";
+import { Alert, Card, StatusBadge } from "@/components/ui";
 import { DocumentPreview } from "@/components/ui/document-preview";
 import { saveEvaluation } from "../actions";
 import { ScoringForm, type CriterionView } from "./scoring-form";
-import { SECTION_LABELS } from "@/lib/sections";
+import {
+  ACTIVE_REVIEW_SECTIONS,
+  ESSAY_CRITERION_CODES,
+  SECTION_LABELS,
+} from "@/lib/sections";
 
 export const metadata: Metadata = { title: "Өргөдөл үнэлэх" };
 export const dynamic = "force-dynamic";
@@ -53,6 +56,13 @@ export default async function ApplicationReviewPage({
 
   if (!application) notFound();
 
+  // Эсээг журмаас хассан. Энэ хуудас шалгуураа шууд DB-ээс уншдаг тул
+  // getActiveCalls-тай ижил шүүлтийг давтана — үгүй бол энд бодогдох нийт
+  // оноо эцсийн жагсаалтынхаас зөрнө.
+  application.call.criteria = application.call.criteria.filter(
+    (criterion) => !ESSAY_CRITERION_CODES.includes(criterion.code),
+  );
+
   await writeAudit({
     actorId: user.id,
     action: "application.view",
@@ -86,10 +96,13 @@ export default async function ApplicationReviewPage({
   const nextId = currentIndex < ids.length - 1 ? ids[currentIndex + 1] : null;
   const unevaluatedCount = totalCount - evaluatedCount;
 
+  // Эсээ хасагдсан тул хуучин хуваарилалтад үлдсэн ESSAY-г ч тооцохгүй.
   const assignedSections =
     user.role === Role.ADMIN
-      ? Object.values(ReviewSection)
-      : user.assignedSections;
+      ? ACTIVE_REVIEW_SECTIONS
+      : user.assignedSections.filter((section) =>
+          ACTIVE_REVIEW_SECTIONS.includes(section),
+        );
 
   const activeSection = (
     assignedSections.includes(sectionParam as ReviewSection)
@@ -145,8 +158,6 @@ export default async function ApplicationReviewPage({
     activeCriteriaCodes = ["EXAM_SCORE", "GPA", "UNIVERSITY_GPA", "G_CRIT_2", "G_CRIT_3", "S_CRIT_2"];
   } else if (activeSection === ReviewSection.SCHOOL) {
     activeCriteriaCodes = ["MAJOR_FIT", "G_CRIT_1", "S_CRIT_1"];
-  } else if (activeSection === ReviewSection.ESSAY) {
-    activeCriteriaCodes = ["ESSAY", "G_CRIT_5", "S_CRIT_4"];
   } else if (activeSection === ReviewSection.SOCIAL) {
     activeCriteriaCodes = ["SOCIAL", "G_CRIT_4", "S_CRIT_3"];
   }
@@ -169,7 +180,7 @@ export default async function ApplicationReviewPage({
           score: ev?.score ?? null,
           status: (ev?.status as any) ?? undefined,
           comment: ev?.comment ?? "",
-          isStatusOnly: ["ESSAY", "G_CRIT_5", "S_CRIT_4", "SOCIAL", "G_CRIT_4", "S_CRIT_3"].includes(code) ? false : true,
+          isStatusOnly: ["SOCIAL", "G_CRIT_4", "S_CRIT_3"].includes(code) ? false : true,
           verifiedBy: ev ? ev.reviewer.name : undefined,
           verifiedAt: ev ? ev.createdAt.toLocaleString("mn-MN") : undefined,
         });
@@ -184,8 +195,9 @@ export default async function ApplicationReviewPage({
           <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
             Шалгах хэсгүүд
           </h2>
-          {Object.entries(SECTION_LABELS).map(([sectionKey, label]) => {
-            const isAssigned = assignedSections.includes(sectionKey as ReviewSection);
+          {ACTIVE_REVIEW_SECTIONS.map((sectionKey) => {
+            const label = SECTION_LABELS[sectionKey];
+            const isAssigned = assignedSections.includes(sectionKey);
             const isActive = activeSection === sectionKey;
             
             if (!isAssigned) {
@@ -376,24 +388,6 @@ export default async function ApplicationReviewPage({
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
                   <DocumentList application={application} reqCodes={["G_REQ_3", "S_REQ_3", "S_REQ_5"]} />
-                </div>
-              </Card>
-            )}
-
-            {activeSection === ReviewSection.ESSAY && (
-              <Card title="Эсээ" description={`${application.essayWordCount ?? 0} үг`}>
-                {application.essayText ? (
-                  <div
-                    className={essayProseClass}
-                    dangerouslySetInnerHTML={{
-                      __html: essayToHtml(application.essayText),
-                    }}
-                  />
-                ) : (
-                  <p className="text-sm text-neutral-600">Эсээ бичээгүй байна.</p>
-                )}
-                <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["ESSAY_REQ"]} />
                 </div>
               </Card>
             )}

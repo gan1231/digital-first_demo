@@ -45,7 +45,12 @@ export async function getRankings(callId?: string): Promise<CallRanking[]> {
 
 async function rankCall(call: ActiveCall): Promise<CallRanking> {
   const applications = await prisma.application.findMany({
-    where: { callId: call.id, status: { not: ApplicationStatus.DRAFT } },
+    // Админ жагсаалтаас нуусан өргөдөл эрэмбэд ч, экспортод ч орохгүй.
+    where: {
+      callId: call.id,
+      status: { not: ApplicationStatus.DRAFT },
+      hiddenAt: null,
+    },
     include: {
       decision: true,
       evaluations: { select: { criterionCode: true, score: true, status: true, reviewerId: true } },

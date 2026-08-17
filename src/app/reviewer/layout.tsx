@@ -30,12 +30,20 @@ export default async function ReviewerLayout({
             Эцсийн жагсаалт
           </Link>
           {user.role === Role.ADMIN ? (
-            <Link
-              href="/reviewer/commission"
-              className="text-neutral-700 transition-colors hover:text-brand-blue"
-            >
-              Ажлын хэсэг
-            </Link>
+            <>
+              <Link
+                href="/reviewer/users"
+                className="text-neutral-700 transition-colors hover:text-brand-blue"
+              >
+                Хэрэглэгчид
+              </Link>
+              <Link
+                href="/reviewer/commission"
+                className="text-neutral-700 transition-colors hover:text-brand-blue"
+              >
+                Ажлын хэсэг
+              </Link>
+            </>
           ) : null}
           <span className="ml-auto text-xs text-neutral-500">
             {user.role === Role.ADMIN ? "Админ" : "Комиссын гишүүн"}

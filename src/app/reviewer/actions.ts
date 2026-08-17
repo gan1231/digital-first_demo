@@ -1,5 +1,6 @@
 "use server";
 
+import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import {
   ApplicationStatus,
@@ -227,6 +228,105 @@ export async function decide(
   revalidatePath("/reviewer/ranking");
 
   return { ok: "Шийдвэр хадгалагдаж, и-мэйл илгээгдлээ." };
+}
+
+/**
+ * Жагсаалтаас нуухад шаардах нууц үг. Комиссын гишүүн бүр өөрийн эрхээр
+ * ордог ч энэ үйлдэл нэмэлт баталгаа шаардана — санамсаргүй дарахаас сэргийлнэ.
+ * .env-ийн ADMIN_HIDE_PASSWORD-оор солино.
+ */
+// `??` биш `||` — .env-д хоосон утга («ADMIN_HIDE_PASSWORD=""») үлдээсэн ч
+// нууц үг хоосон болж, хэн ч дарж чаддаг болохоос сэргийлнэ.
+const HIDE_PASSWORD = process.env.ADMIN_HIDE_PASSWORD || "ustgah9911";
+
+/** Тогтмол хугацаанд харьцуулна — хугацааны зөрүүгээр нууц үг таамаглуулахгүй. */
+function passwordMatches(input: string): boolean {
+  if (input.length === 0) return false;
+  const given = Buffer.from(input, "utf8");
+  const expected = Buffer.from(HIDE_PASSWORD, "utf8");
+  if (given.length !== expected.length) return false;
+  return timingSafeEqual(given, expected);
+}
+
+/**
+ * Өргөдлийг комиссын жагсаалтаас нуухад. Өгөгдөл, хавсаргасан баримт бичиг
+ * устдаггүй — зөвхөн `hiddenAt` тэмдэглэгдэнэ. «Нуусан» шүүлтүүрээс буцаан
+ * нээх боломжтой.
+ */
+export async function hideApplication(
+  applicationId: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireRole(Role.ADMIN);
+
+  if (!passwordMatches(String(formData.get("password") ?? ""))) {
+    return { error: "Нууц үг буруу байна." };
+  }
+
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    select: { hiddenAt: true, lastName: true, firstName: true },
+  });
+
+  if (!application) return { error: "Өргөдөл олдсонгүй." };
+  if (application.hiddenAt) {
+    return { error: "Энэ өргөдөл аль хэдийн нуугдсан байна." };
+  }
+
+  await prisma.application.update({
+    where: { id: applicationId },
+    data: { hiddenAt: new Date() },
+  });
+
+  await writeAudit({
+    actorId: user.id,
+    action: "application.hide",
+    targetType: "Application",
+    targetId: applicationId,
+    meta: { name: `${application.lastName ?? ""} ${application.firstName ?? ""}`.trim() },
+  });
+
+  revalidatePath("/reviewer");
+  revalidatePath("/reviewer/ranking");
+  revalidatePath("/reviewer/users");
+
+  return { ok: "Өргөдлийг жагсаалтаас нууллаа." };
+}
+
+/** Нуусан өргөдлийг буцаан нээнэ. Сэргээх нь эрсдэлгүй тул нууц үг шаардахгүй. */
+export async function unhideApplication(
+  applicationId: string,
+  _prev: FormState,
+  _formData: FormData,
+): Promise<FormState> {
+  const user = await requireRole(Role.ADMIN);
+
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    select: { hiddenAt: true },
+  });
+
+  if (!application) return { error: "Өргөдөл олдсонгүй." };
+  if (!application.hiddenAt) return { error: "Энэ өргөдөл нуугдаагүй байна." };
+
+  await prisma.application.update({
+    where: { id: applicationId },
+    data: { hiddenAt: null },
+  });
+
+  await writeAudit({
+    actorId: user.id,
+    action: "application.unhide",
+    targetType: "Application",
+    targetId: applicationId,
+  });
+
+  revalidatePath("/reviewer");
+  revalidatePath("/reviewer/ranking");
+  revalidatePath("/reviewer/users");
+
+  return { ok: "Өргөдлийг буцаан нээлээ." };
 }
 
 /** Материал дутуу үед өргөдлийг өргөдөгч рүү буцаана. */

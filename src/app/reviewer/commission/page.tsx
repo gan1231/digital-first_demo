@@ -3,7 +3,7 @@ import { Role, ReviewSection } from "@prisma/client";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SubmitButton } from "@/components/submit-button";
-import { SECTION_LABELS } from "@/lib/sections";
+import { ACTIVE_REVIEW_SECTIONS, SECTION_LABELS } from "@/lib/sections";
 import {
   createCommissionMember,
   removeCommissionMember,
@@ -43,7 +43,13 @@ export default async function CommissionPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 bg-white">
-                  {members.map((member) => (
+                  {members.map((member) => {
+                    // Эсээ хасагдсан тул хуучин хуваарилалтаас түүнийг харуулахгүй.
+                    const sections = member.assignedSections.filter((section) =>
+                      ACTIVE_REVIEW_SECTIONS.includes(section),
+                    );
+
+                    return (
                     <tr key={member.id} className="hover:bg-neutral-50">
                       <td className="whitespace-nowrap px-4 py-3">
                         <div className="font-medium text-neutral-900">
@@ -74,9 +80,9 @@ export default async function CommissionPage() {
                           <span className="inline-flex items-center rounded-full bg-brand-blue/10 px-2 py-0.5 text-xs font-medium text-brand-blue">
                             Бүх эрхтэй (Админ)
                           </span>
-                        ) : member.assignedSections.length > 0 ? (
+                        ) : sections.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {member.assignedSections.map((section) => (
+                            {sections.map((section) => (
                               <span key={section} className="inline-flex items-center rounded bg-neutral-100 px-1.5 py-0.5 text-xs font-medium text-neutral-700">
                                 {SECTION_LABELS[section as ReviewSection]}
                               </span>
@@ -112,7 +118,8 @@ export default async function CommissionPage() {
                         ) : null}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -153,10 +160,10 @@ export default async function CommissionPage() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-neutral-700">Хариуцах хэсгүүд</label>
                 <div className="mt-2 space-y-2">
-                  {Object.entries(SECTION_LABELS).map(([key, label]) => (
+                  {ACTIVE_REVIEW_SECTIONS.map((key) => (
                     <label key={key} className="flex items-center gap-2">
                       <input type="checkbox" name="assignedSections" value={key} className="rounded border-neutral-300 text-brand-blue focus:ring-brand-blue" />
-                      <span className="text-sm text-neutral-700">{label}</span>
+                      <span className="text-sm text-neutral-700">{SECTION_LABELS[key]}</span>
                     </label>
                   ))}
                 </div>
