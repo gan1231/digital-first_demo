@@ -19,14 +19,24 @@ const include = {
   _count: { select: { applications: true } },
 } as const;
 
-function injectHardcodedRequirements(call: ActiveCall) {
-  const newRequirements = [];
-  const hasGuarantorId = call.requirements.some(r => r.label === 'Батлан даагчийн иргэний үнэмлэхийн хуулбар');
-  const hasHsProof = call.requirements.some(r => r.label === 'Дорноговь аймагт ерөнхий боловсрол эзэмшсэнийг нотлох баримт');
+/**
+ * Журамд нэмэгдсэн ч DB-д ороогүй шаардлагуудыг оруулж, нэрийг тодруулна.
+ *
+ * Өргөдөл бөглөх, комисс шалгах хоёр газарт ижил жагсаалт харагдах ёстой тул
+ * шаардлагыг DB-ээс шууд уншсан хуудас бүр үүнийг дуудна. Эс тэгвэл өргөдөгч
+ * хавсаргасан атлаа комисст харагдахгүй баримт үүснэ.
+ */
+export function injectRequirements(
+  callId: string,
+  requirements: DocumentRequirement[],
+): DocumentRequirement[] {
+  const newRequirements: DocumentRequirement[] = [];
+  const hasGuarantorId = requirements.some(r => r.label === 'Батлан даагчийн иргэний үнэмлэхийн хуулбар');
+  const hasHsProof = requirements.some(r => r.label === 'Дорноговь аймагт ерөнхий боловсрол эзэмшсэнийг нотлох баримт');
   let injectedGuarantor = false;
   let injectedHsProof = false;
 
-  for (const req of call.requirements) {
+  for (const req of requirements) {
     if (req.label === 'Иргэний үнэмлэхийн хуулбар') {
       req.label = 'Хүсэлт гаргагчийн иргэний үнэмлэхийн хуулбар';
     }
@@ -37,7 +47,7 @@ function injectHardcodedRequirements(call: ActiveCall) {
       injectedGuarantor = true;
       newRequirements.push({
         id: 'hardcoded-guarantor-id',
-        callId: call.id,
+        callId,
         code: 'GUARANTOR_ID_COPY_STATIC',
         label: 'Батлан даагчийн иргэний үнэмлэхийн хуулбар',
         description: 'Төрийн үйлчилгээний нэгдсэн систем (e-mongolia)-ээс авсан Иргэний үнэмлэхийн лавлагааг хавсаргах.',
@@ -55,7 +65,7 @@ function injectHardcodedRequirements(call: ActiveCall) {
       injectedHsProof = true;
       newRequirements.push({
         id: 'hardcoded-hs-dornogovi-proof',
-        callId: call.id,
+        callId,
         code: 'HS_DORNOGOVI_PROOF_STATIC',
         label: 'Дорноговь аймагт ерөнхий боловсрол эзэмшсэнийг нотлох баримт',
         description: null,
@@ -70,7 +80,12 @@ function injectHardcodedRequirements(call: ActiveCall) {
 
 
   }
-  call.requirements = newRequirements;
+
+  return newRequirements;
+}
+
+function injectHardcodedRequirements(call: ActiveCall): ActiveCall {
+  call.requirements = injectRequirements(call.id, call.requirements);
   return call;
 }
 

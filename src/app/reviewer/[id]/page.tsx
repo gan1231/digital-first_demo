@@ -5,12 +5,16 @@ import { CallTrack, Role, ReviewSection } from "@prisma/client";
 import { requireRole, writeAudit } from "@/lib/auth";
 import { TARGET_GROUP_LABELS } from "@/lib/anket";
 import { GENERATED_CODES } from "@/lib/application-shared";
-import { trackLabels } from "@/lib/call";
+import { injectRequirements, trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
 import { calculateTotalScore, suggestScore } from "@/lib/scoring";
 import { Alert, Card, StatusBadge } from "@/components/ui";
 import { DocumentPreview } from "@/components/ui/document-preview";
 import { saveEvaluation } from "../actions";
+import {
+  AdminDocumentDelete,
+  AdminDocumentUpload,
+} from "./document-admin";
 import { ScoringForm, type CriterionView } from "./scoring-form";
 import {
   ACTIVE_REVIEW_SECTIONS,
@@ -63,6 +67,15 @@ export default async function ApplicationReviewPage({
     (criterion) => !ESSAY_CRITERION_CODES.includes(criterion.code),
   );
 
+  // Батлан даагчийн иргэний үнэмлэх зэрэг журмаар нэмэгдсэн шаардлагууд DB-д
+  // байдаггүй, кодоор нэмэгддэг. Энэ хуудас шаардлагаа шууд DB-ээс уншдаг тул
+  // тэдгээрийг эндээс оруулж өгөхгүй бол өргөдөгч хавсаргасан баримт нь
+  // комисст огт харагдахгүй өнгөрнө.
+  application.call.requirements = injectRequirements(
+    application.callId,
+    application.call.requirements,
+  );
+
   await writeAudit({
     actorId: user.id,
     action: "application.view",
@@ -96,13 +109,15 @@ export default async function ApplicationReviewPage({
   const nextId = currentIndex < ids.length - 1 ? ids[currentIndex + 1] : null;
   const unevaluatedCount = totalCount - evaluatedCount;
 
+  // Материал нэмэх, солих, устгах эрх зөвхөн админд.
+  const isAdmin = user.role === Role.ADMIN;
+
   // Эсээ хасагдсан тул хуучин хуваарилалтад үлдсэн ESSAY-г ч тооцохгүй.
-  const assignedSections =
-    user.role === Role.ADMIN
-      ? ACTIVE_REVIEW_SECTIONS
-      : user.assignedSections.filter((section) =>
-          ACTIVE_REVIEW_SECTIONS.includes(section),
-        );
+  const assignedSections = isAdmin
+    ? ACTIVE_REVIEW_SECTIONS
+    : user.assignedSections.filter((section) =>
+        ACTIVE_REVIEW_SECTIONS.includes(section),
+      );
 
   const activeSection = (
     assignedSections.includes(sectionParam as ReviewSection)
@@ -329,7 +344,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Ажлын газар" value={application.guarantorWorkplace} className="sm:col-span-2" />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["G_REQ_1", "S_REQ_1"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_1", "S_REQ_1", "GUARANTOR_ID_COPY_STATIC"]} isAdmin={isAdmin} />
                 </div>
               </Card>
             )}
@@ -349,7 +364,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Зорилтот бүлэг" value={application.isTargetGroup ? application.targetGroupTypes.map(t => TARGET_GROUP_LABELS[t]).join(", ") + " (" + (application.targetGroupNote||"") + ")" : "Үгүй"} className="sm:col-span-2" />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["G_REQ_2", "S_REQ_6", "S_REQ_2"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_2", "S_REQ_6", "S_REQ_2"]} isAdmin={isAdmin} />
                 </div>
               </Card>
             )}
@@ -371,7 +386,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Төгссөн сургууль" value={application.school} className="sm:col-span-2" />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["G_REQ_4", "G_REQ_5", "S_REQ_4"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_4", "G_REQ_5", "S_REQ_4"]} isAdmin={isAdmin} />
                 </div>
               </Card>
             )}
@@ -387,7 +402,7 @@ export default async function ApplicationReviewPage({
                   <Item label="Сургалтын төлбөр" value={application.tuitionAmount ? `${application.tuitionAmount.toLocaleString("mn-MN")} ₮` : null} />
                 </dl>
                 <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <DocumentList application={application} reqCodes={["G_REQ_3", "S_REQ_3", "S_REQ_5"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_3", "S_REQ_3", "S_REQ_5"]} isAdmin={isAdmin} />
                 </div>
               </Card>
             )}
@@ -395,7 +410,7 @@ export default async function ApplicationReviewPage({
             {activeSection === ReviewSection.SOCIAL && (
               <Card title="Нийгмийн оролцоо манлайллын үзүүлэлт">
                 <div className="pt-2">
-                  <DocumentList application={application} reqCodes={["G_REQ_6", "S_REQ_7"]} />
+                  <DocumentList application={application} reqCodes={["G_REQ_6", "S_REQ_7"]} isAdmin={isAdmin} />
                 </div>
               </Card>
             )}
@@ -432,7 +447,15 @@ function Item({
   );
 }
 
-function DocumentList({ application, reqCodes }: { application: any; reqCodes: string[] }) {
+function DocumentList({
+  application,
+  reqCodes,
+  isAdmin = false,
+}: {
+  application: any;
+  reqCodes: string[];
+  isAdmin?: boolean;
+}) {
   // Requirement codes mapped roughly to what might be in DB. 
   // We can just filter by keywords or exact codes.
   const reqs = application.call.requirements.filter((r: any) => 
@@ -479,11 +502,30 @@ function DocumentList({ application, reqCodes }: { application: any; reqCodes: s
                         {doc.note && <div className="text-xs text-neutral-500 mt-0.5">{doc.note}</div>}
                       </div>
                     )}
-                    <DocumentPreview url={`/api/documents/${doc.id}`} fileName={doc.fileName} />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <DocumentPreview url={`/api/documents/${doc.id}`} fileName={doc.fileName} />
+                      {isAdmin ? (
+                        <AdminDocumentDelete
+                          documentId={doc.id}
+                          fileName={doc.fileName}
+                        />
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
+
+            {isAdmin ? (
+              <AdminDocumentUpload
+                applicationId={application.id}
+                requirementCode={requirement.code}
+                allowMultiple={requirement.allowMultiple}
+                collectsEventName={requirement.collectsEventName}
+                collectsNote={requirement.collectsNote}
+                hasExisting={documents.length > 0}
+              />
+            ) : null}
           </li>
         );
       })}
