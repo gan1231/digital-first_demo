@@ -6,6 +6,8 @@ import { GENERATED_CODES } from "@/lib/application-shared";
 import { getActiveCalls, trackLabels } from "@/lib/call";
 import { prisma } from "@/lib/prisma";
 import { Alert, StatusBadge, inputClass, statusLabels } from "@/components/ui";
+import { resetUserPassword } from "../actions";
+import { ResetPasswordButton } from "../reset-password";
 
 export const metadata: Metadata = { title: "Нийт хэрэглэгчийн төлөв" };
 export const dynamic = "force-dynamic";
@@ -204,6 +206,7 @@ export default async function UsersStatusPage({
                 <th className="px-3 py-2 font-medium">Тэтгэлэг</th>
                 <th className="px-3 py-2 text-center font-medium">Бүрдэл</th>
                 <th className="px-3 py-2 font-medium">Төлөв</th>
+                <th className="px-3 py-2 text-right font-medium">Үйлдэл</th>
               </tr>
             </thead>
             <tbody>
@@ -294,6 +297,14 @@ export default async function UsersStatusPage({
                       </td>
                     </>
                   )}
+
+                  <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <ResetPasswordButton
+                      action={resetUserPassword.bind(null, user.id)}
+                      name={user.name}
+                      email={user.email}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

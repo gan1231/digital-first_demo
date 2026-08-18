@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SubmitButton } from "@/components/submit-button";
 import { ACTIVE_REVIEW_SECTIONS, SECTION_LABELS } from "@/lib/sections";
+import { resetUserPassword } from "../actions";
+import { ResetPasswordButton } from "../reset-password";
 import {
   createCommissionMember,
   removeCommissionMember,
@@ -13,7 +15,7 @@ import {
 export const metadata: Metadata = { title: "Ажлын хэсэг" };
 
 export default async function CommissionPage() {
-  await requireRole(Role.ADMIN);
+  const admin = await requireRole(Role.ADMIN);
 
   const members = await prisma.user.findMany({
     where: { role: { in: [Role.REVIEWER, Role.ADMIN] } },
@@ -93,6 +95,16 @@ export default async function CommissionPage() {
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-neutral-500">
+                        {/* Админ өөрийн нууц үгээ энэ замаар солихгүй. */}
+                        {member.id !== admin.id ? (
+                          <div className="mb-1.5">
+                            <ResetPasswordButton
+                              action={resetUserPassword.bind(null, member.id)}
+                              name={member.name}
+                              email={member.email}
+                            />
+                          </div>
+                        ) : null}
                         {member.role === Role.REVIEWER ? (
                           member.isActive ? (
                             <form action={removeCommissionMember.bind(null, member.id)}>

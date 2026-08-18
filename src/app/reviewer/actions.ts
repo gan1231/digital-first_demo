@@ -9,7 +9,7 @@ import {
   type ScoringCriterion,
 } from "@prisma/client";
 import { z } from "zod";
-import { requireRole, writeAudit } from "@/lib/auth";
+import { hashPassword, requireRole, writeAudit } from "@/lib/auth";
 import { sendEmail, type EmailTemplate } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -373,4 +373,60 @@ export async function requestFix(
   revalidatePath("/reviewer");
 
   return { ok: "Өргөдөгч рүү засварын хүсэлт илгээлээ." };
+}
+
+const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * Админ хэрэглэгчийн нууц үгийг сэргээнэ. Хэрэглэгч нууц үгээ мартсан үед
+ * админ шинийг тавьж, утсаар дамжуулна — системд «нууц үг мартсан» урсгал
+ * байхгүй тул энэ бол цорын ганц сэргээх зам.
+ *
+ * Сэргээмэгц тухайн хэрэглэгчийн нээлттэй бүх session хүчингүй болно —
+ * хуучин нууц үгээр нэвтэрсэн төхөөрөмж үлдэхээс сэргийлнэ.
+ */
+export async function resetUserPassword(
+  userId: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const admin = await requireRole(Role.ADMIN);
+  const password = String(formData.get("password") ?? "").trim();
+
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { error: `Нууц үг доод тал нь ${MIN_PASSWORD_LENGTH} тэмдэгт байна.` };
+  }
+
+  // Админ өөрийн нууц үгээ энэ замаар солихгүй — өөрийгөө санамсаргүй
+  // түгжихээс сэргийлнэ.
+  if (userId === admin.id) {
+    return { error: "Өөрийн нууц үгээ энэ замаар солих боломжгүй." };
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, role: true },
+  });
+
+  if (!target) return { error: "Хэрэглэгч олдсонгүй." };
+
+  const passwordHash = await hashPassword(password);
+
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+    prisma.session.deleteMany({ where: { userId } }),
+  ]);
+
+  await writeAudit({
+    actorId: admin.id,
+    action: "user.password_reset",
+    targetType: "User",
+    targetId: userId,
+    meta: { email: target.email, role: target.role },
+  });
+
+  revalidatePath("/reviewer/users");
+  revalidatePath("/reviewer/commission");
+
+  return { ok: `${target.name}-ийн нууц үг шинэчлэгдлээ.` };
 }
