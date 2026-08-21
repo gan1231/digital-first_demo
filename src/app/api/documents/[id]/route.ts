@@ -18,7 +18,7 @@ async function loadDocument(id: string) {
 
 /** Баримт үзэх. Хувийн мэдээлэлтэй тул эрх шалгаж, үзсэн бүрд мөрдөл бичнэ. */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
@@ -49,6 +49,10 @@ export async function GET(
   // MinIO-с шууд татах (presign) үед S3_PUBLIC_ENDPOINT буруу байвал 404 өгдөг тул 
   // найдвартай ажиллахын тулд үргэлж сервер дундуур (proxy) дамжуулж харуулна.
 
+  // ?download=1 үед хөтөч дотор нээхгүй, шууд татна.
+  const isDownload =
+    new URL(request.url).searchParams.get("download") === "1";
+
   try {
     const bytes = await storage.read(document.storageKey);
 
@@ -56,7 +60,7 @@ export async function GET(
       headers: {
         "Content-Type": document.mimeType,
         "Content-Length": String(bytes.byteLength),
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(document.fileName)}`,
+        "Content-Disposition": `${isDownload ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(document.fileName)}`,
         "Cache-Control": "private, no-store",
       },
     });

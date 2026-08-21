@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   serverActions: {
     allowedOrigins: ["burtgel.dornogovi.gov.mn", "192.168.137.10:3007"],
   },
+  // pdfkit-ийн standalone багцыг webpack задлах шаардлагагүй — серверт
+  // байгаагаар нь дуудна.
+  serverExternalPackages: ["pdfkit"],
 };
 
 export default nextConfig;

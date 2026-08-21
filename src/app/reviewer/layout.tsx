@@ -38,6 +38,12 @@ export default async function ReviewerLayout({
                 Хэрэглэгчид
               </Link>
               <Link
+                href="/reviewer/downloads"
+                className="text-neutral-700 transition-colors hover:text-brand-blue"
+              >
+                Материал татах
+              </Link>
+              <Link
                 href="/reviewer/commission"
                 className="text-neutral-700 transition-colors hover:text-brand-blue"
               >

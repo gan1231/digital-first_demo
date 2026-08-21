@@ -299,11 +299,22 @@ export default async function UsersStatusPage({
                   )}
 
                   <td className="px-3 py-2 text-right whitespace-nowrap">
-                    <ResetPasswordButton
-                      action={resetUserPassword.bind(null, user.id)}
-                      name={user.name}
-                      email={user.email}
-                    />
+                    <div className="flex flex-col items-end gap-1.5">
+                      {applications.map((application) => (
+                        <Link
+                          key={application.id}
+                          href={`/reviewer/downloads/${application.id}`}
+                          className="rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs text-neutral-800 transition-colors hover:bg-neutral-50"
+                        >
+                          Файлууд татах ({application.totalDocuments})
+                        </Link>
+                      ))}
+                      <ResetPasswordButton
+                        action={resetUserPassword.bind(null, user.id)}
+                        name={user.name}
+                        email={user.email}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
